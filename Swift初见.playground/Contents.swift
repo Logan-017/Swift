@@ -127,6 +127,7 @@ for score in individualScores {
 print("团队分数：\(teamScore)")
 
 
+
 /*-------------------------------------- 可选项 --------------------------------------------*/
 
 // var optionalString = nil
@@ -160,4 +161,16 @@ let nickName : String? = nil  // 打印结果：Hi Steve Jobs
 let fullName : String = "Steve Jobs"
 let informalGreeting = "Hi \(nickName ?? fullName)"
 
+
+let vegetable = "red pepper"
+switch vegetable {
+case "celery":
+    print("Add some rasins and make ants on a log.")
+case "cucumber", "watercress":
+    print("That would make a good tea sandwich.")
+case let x where x.hasSuffix("pepper"):
+    print("Is it a spicy \(x)")
+default:
+    print("Everything tastes good in soup.")
+}
 
