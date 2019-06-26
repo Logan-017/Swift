@@ -115,8 +115,17 @@ print("The status message is \(http200Status.description)")
 
 // 可选类型
 // let abc : String = nil // note: add '?' to form the optional type 'String?'
-let possibleNumber = "123"
-// let possibleNumber = "hello, world"
+//let possibleNumber = "123"
+ let possibleNumber = "hello, world"
 let convertedNumber = Int(possibleNumber)
 // convertedNumber 被推测为类型 "Int?"， 或者类型 "optional Int"
+
+
+var serverResponseCode : Int? = 404
+// serverResponseCode 包含一个可选的 Int 值 404
+serverResponseCode = nil
+// serverResponseCode 现在不包含值
+
+var surveyAnswer : String?
+// surveyAnswer 被自动设置为 nil
 
