@@ -129,3 +129,27 @@ serverResponseCode = nil
 var surveyAnswer : String?
 // surveyAnswer 被自动设置为 nil
 
+func canThrowAnError() throws {
+    // 这个函数有可能抛出错误
+}
+
+do {
+    try canThrowAnError()
+    // 没有错误消息抛出
+} catch {
+    // 有一个错误消息抛出
+}
+
+
+func makeASandwich() throws {
+    // ...
+}
+
+//do {
+//    try makeASandwich()
+//    eatASandwich()
+//} catch SandwichError.outOfCleanDishes {
+//    washDishes()
+//} catch SandwichError.missingIngredients(let ingredients) {
+//    buyGroceries(ingredients)
+//}
