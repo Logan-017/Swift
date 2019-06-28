@@ -31,3 +31,77 @@ if name == "world" {
 ("blue", -1) < ("purple", 1)       // 正常，比较的结果为 true
 //("blue", false) < ("purple", true) // 错误，因为 < 不能比较布尔类型  error: binary operator '<' cannot be applied to two '(String, Bool)' operands
 // Swift 标准库只能比较七个以内元素的元组比较函数。如果你的元组元素超过七个时，你需要自己实现比较运算符。
+
+//a ?? b  == >    (a != nil ?) a! : b
+
+let defaultColorName = "red"
+var userDefinedColorName: String?   //默认值为 nil
+
+var colorNameToUse = userDefinedColorName ?? defaultColorName
+// userDefinedColorName 的值为空，所以 colorNameToUse 的值为 "red"
+
+userDefinedColorName = "green"
+colorNameToUse = userDefinedColorName ?? defaultColorName
+
+for index in 1...5 {
+    print("\(index) * 5 = \(index * 5)")
+}
+
+
+let names = ["Tom", "Make", "Bob", "White"]
+let count = names.count
+for i in 0..<count {
+    print("第\(i+1)个人叫\(names[i])")
+}
+
+for name in names[2...] {
+    print(name)
+}
+print("--------------------")
+
+for name in names[1..<3] {
+    print(name)
+}
+
+print("--------------------")
+
+
+for name in names[1...3] {
+    print(name)
+}
+
+print("--------------------")
+
+
+for name in names[2...] {
+    print(name)
+}
+
+print("--------------------")
+
+
+for name in names[...2] {
+    print(name)
+}
+
+print("--------------------")
+
+for name in names[..<2] {
+    print(name)
+}
+
+print("--------------------")
+let range = ...5
+range.contains(7)
+range.contains(4)
+range.contains(-1)
+
+print("--------------------")
+
+let allowedEntry = false
+if !allowedEntry {// error: unary operator cannot be separated from its operand - 一元运算符不能与其操作数分开
+    print("ACCESS DENIED")
+}
+
+
+print("--------------------")
