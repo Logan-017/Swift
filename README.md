@@ -29,7 +29,7 @@
     - try? 表达式不会为已返回可选类型的代码引入额外的可选类型层级。
     - 大数字的整型字面量初始化代码的类型将会被正确推导，例如 UInt64(0xffff_ffff_ffff_ffff) 将会被推导为整型类型而非溢出。
 
-## Swift 
+## Swift 之旅
 - 国际惯例
 
 ```swift
@@ -102,17 +102,20 @@ occupations = [:]
 
 ## Swift 版本修订记录
 [中文](https://swiftgg.gitbook.io/swift/huan-ying-shi-yong-swift/04_revision_history)
-[英文](https://docs.swift.org/swift-book/GuidedTour/GuidedTour.html)
+[英文](https://docs.swift.org/swift-book/RevisionHistory/RevisionHistory.html)
 
 # Swift 教程
 ## 基础部分
 - Swift 增加了 Objective-C 中没有的高阶数据类型比如元组（Tuple），可用于多返回值的函数。
 
 - Swift 还增加了可选（Optional）类型，用于处理值缺失的情况，它可以用在任何类型上，不仅仅是类。
-- Swift 是一门类型安全的语言，类型安全可以帮助你在开发阶段尽早发现并修正错误。
+- Swift 是【类型安全】的语言，可在开发阶段尽早发现并修正错误。
 
 ---
 ### 常量和变量
+
+- 场景：无需多次改变赋值，使用常量；需要多次改变值，使用变量。
+
 - 常量的值一旦设定就不能改变，而变量的值可以随意更改。
 ### 声明常量和变量
 - 用 let 来声明常量，用 var 来声明变量
@@ -124,6 +127,8 @@ var x = 0.0, y = 0.0, z = 0.0
 ```
 
 ### 类型注解（type annotation）
+
+- 场景：初始值不确定，需要标明数据类型
 
 - 可以在一行中定义多个同样类型的变量，用逗号分割，并在最后一个变量名之后添加类型注解：
 
@@ -273,8 +278,6 @@ let maxValue = UInt8.max  // maxValue 为 255，是 UInt8 类型
 ---
 ### 数值型类型转换
 
-
-
 #### 整数转换
 
 - `Int8`  存储数字范围-128`~`127
@@ -323,18 +326,254 @@ let integerPi = Int(pi)
 ---
 ### 布尔值
 
+- 区别于C和OC，Swift的布尔类型为一种单独类型，更加安全和更高的可读性
 
+- Swift 有一个基本的*布尔（Boolean）类型*，叫做 `Bool`
+
+- Swift 有两个布尔常量，`true` 和 `false`
+
+  ```swift
+  let orangesAreOrange = true
+  let turnipsAreDelicious = false	
+  ```
+
+- 使用非布尔值，Swift 的类型安全机制会报错
+
+```swift
+let i = 1
+if i {
+    // 这个例子不会通过编译，会报错
+}
+```
+
+- 合法的：
+
+  ```swift
+  let i = 1
+  if i == 1 {
+      // 这个例子会编译成功
+  }
+  ```
+
+  
 
 ---
-### 元组
+### 元组（tuples）
+
+- 场景：可将不同数据类型，但同一业务的数据，集合在一起
+
+- 元组内的值可以是任意类型，并不要求是相同类型。
+
+  ```swift
+  let http404Error = (404, "Not Found")
+  // http404Error 的类型是 (Int, String)，值是 (404, "Not Found")
+  ```
+
+- 将一个元组的内容分解（decompose）成单独的常量和变量
+
+```swift
+let (statusCode, statusMessage) = http404Error
+print("The status code is \(statusCode)")
+// 输出“The status code is 404”
+print("The status message is \(statusMessage)")
+// 输出“The status message is Not Found”
+```
+
+- 用下划线（`_`）,忽略不需要的值
+
+  ```swift
+  let (justTheStatusCode, _) = http404Error
+  print("The status code is \(justTheStatusCode)")
+  // 输出“The status code is 404”
+  ```
+
+- 下标访问（下标从零开始）
+
+  ```swift
+  print("The status code is \(http404Error.0)")
+  // 输出“The status code is 404”
+  print("The status message is \(http404Error.1)")
+  // 输出“The status message is Not Found”
+  ```
+
+- 定义元祖-给元素命名
+
+```swift
+let http200Status = (statusCode: 200, description: "OK")
+```
+
+- 命名后的访问
+
+```swift
+print("The status code is \(http200Status.statusCode)")
+// 输出“The status code is 200”
+print("The status message is \(http200Status.description)")
+// 输出“The status message is OK”
+```
+
+- 使用场景：函数的 多个返回值。[ 函数参数与返回值]（#函数参数与返回值）
+
+> 元组不适合创建复杂数据结构, 可用类或结构体去建模。
+
 ---
 ### 可选类型
+
+- 场景：表示该变量/常量，可能有值，可能没值
+
+- *可选类型（optionals）*处理值可能缺失
+
+> - C 和 Objective-C 没有可选类型这个概念, OC对象用nil，基本数据类型用特殊值（比如 `NSNotFound`）
+> - Swift 的可选类型，适用于任意类型
+
+```swift
+let possibleNumber = "123"
+let convertedNumber = Int(possibleNumber)
+// convertedNumber 被推测为类型 "Int?"， 或者类型 "optional Int"
+```
+
+- 因构造器可能会失败，所以返回*可选类型*（optional）`Int`，而不是 `Int`。
+- 问号暗示表示值为可选类型，可能包含 `Int` 值，可能*不包含值*。（不能包含其他类型值，如 `Bool` 值或 `String` 值。只能是 `Int` ，或什么都没有。）
+
 #### nil
-#### if 语句以及强制解析
-#### 可选绑定
-#### 隐式解析可选类型
+
+- 场景：可选类型的一个值，表示没有值/值缺失
+
+- 可以给可选变量赋值为 `nil` 来表示它没有值：
+
+```swift
+var serverResponseCode: Int? = 404
+// serverResponseCode 包含一个可选的 Int 值 404
+serverResponseCode = nil
+// serverResponseCode 现在不包含值
+```
+
+> 非可选类型的常量和变量，不能赋值nil。
+
+- 声明一个可选常量或者变量但是没有赋值，它们会自动被设置为 `nil`：
+
+```swift
+var surveyAnswer: String?
+// surveyAnswer 被自动设置为 nil
+```
+
+> Swift和OC的nil的区别：
+>
+> - OC ，nil为指针, 指向不存在的对象（只能用于对象类型，不能基本数据类型）
+> - Swift，nil是一个值（能用于任意类型）
+
+#### if 语句 +  强制解析
+
+- 场景：只判断可选项是否为空值，不解包
+
+- `if` 语句和 `nil` 比较来判断一个可选值是否包含值
+
+- 使用“相等”(`==`)或“不等”(`!=`)来执行比较
+
+- 可选类型有值，它将不等于 `nil`：
+
+- ```swift
+  if convertedNumber != nil {
+      print("convertedNumber contains some integer value.")
+  }
+  // 输出“convertedNumber contains some integer value.”
+  ```
+
+- 强制解析/解包（forced unwrapping）：确定有值，可在后面加一个感叹号（`!`）取值。
+
+> 如果没有值，强制解包会报运行时错误.
+
+```swift
+if convertedNumber != nil {
+    print("convertedNumber has an integer value of \(convertedNumber!).")
+}
+// 输出“convertedNumber has an integer value of 123.”
+```
+
+
+
+#### 可选绑定（optional binding）
+
+- 场景：判断可选类型是否有值，并解包使用
+
+- 可选绑定：判断是否有值 --> 有值 --> 解包 + 赋值到常量/变量
+- if 和 while 都可以
+
+```swift
+// MARK:- 可选绑定 - if
+if let atualNumber = Int(possibleNumber) {
+    print("if - Int()转换成功, \(atualNumber)")
+} else {
+    print("if - Int()转换失败")
+}
+
+// MARK:- 可选绑定 - while
+while let atualNumber = Int(possibleNumber1) {
+    print("while - Int()转换成功, \(atualNumber)")
+}
+```
+
+- 一个 `if` 语句，可包含多个可选绑定或多个布尔条件，用逗号隔开
+- 任一可选绑定的值为 `nil`，或任一布尔条件为 `false`，整个 `if` 条件判断为 `false`
+
+```swift
+// MARK:- 可选绑定和布尔条件混用
+if let firstNumber = Int("4"),
+   let secondNumber = Int("42"),
+   firstNumber < secondNumber && secondNumber < 100  {
+    
+    print("--------------------")
+    print("\(firstNumber) < \(secondNumber) < 100")
+    print("--------------------")
+}
+
+// MARK:- 等价于上面
+if let firstNumber = Int("4") {
+    if let secondNumber = Int("42") {
+        if firstNumber < secondNumber && secondNumber < 100 {
+            
+            print("--------------------")
+            print("\(firstNumber) < \(secondNumber) < 100")
+            print("--------------------")
+        }
+    }
+}
+```
+
+> - if 条件语句创建可选绑定，if 语句中（`body`）中才能获取到值
+> - `guard` 语句中创建一个可选绑定，在 `guard` 语句外且在语句后才能获取到值
+
+#### 隐式解析可选类型/隐式解包（implicitly unwrapped optionals）
+
+- 场景：变量/常量明确有值时，减少判断，自动强制解包/解析，提高效率
+- 声明方式：可选的类型的后面的问号（`String?`）改成感叹号（`String!`）（相当于把强制解包操作，提前使用）
+- 隐式解析可选类型，主要被用在 Swift 中类的构造过程中，请参考 [无主引用以及隐式解析可选属性](#无主引用和隐式解包可选值属性)。
+
+```swift
+// MARK:- 可选类型 String 和隐式解析可选类型 String 之间的区别
+let possibleString: String? = "An optional string."
+let forcedString: String = possibleString! // 需要感叹号来获取值
+
+let possibleString1: String! = "An optional string."
+// possibleString1 = nil  // 保留可选类型,可以为nil的特性
+let forcedString1: String = possibleString1 // 不需要感叹号
+```
+
+```swift
+// MARK:- 隐式可选项 -  判断是否有值(跟普通可选类型一样)
+if possibleString1  !=  nil {
+    print(possibleString1!)
+}
+
+// MARK:- 隐式可选项 -  可选项绑定 (跟普通可选类型一样)
+if let definiteString =  possibleString1 {
+    print(definiteString)
+}
+```
+
+
+
 ---
-### 错误处理
+### 错误处理（error handling）
 ---
 ### 断言和先决条件
 #### 使用断言进行调试
