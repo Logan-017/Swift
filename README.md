@@ -132,7 +132,7 @@ var x = 0.0, y = 0.0, z = 0.0
 var red, green, blue: Double
 ```
 
-> 一般来说你很少需要写类型注解。如果你在声明常量或者变量的时候赋了一个初始值，Swift 可以推断出这个常量或者变量的类型
+> 一般很少写类型注解。在声明常量或者变量赋初始值，Swift 可以推断类型.
 
 ### 常量和变量的命名
 - 常量和变量名可以包含任何字符，包括 Unicode 字符：
@@ -198,18 +198,133 @@ let maxValue = UInt8.max  // maxValue 为 255，是 UInt8 类型
 
 ---
 ### 浮点数
+
+- `Double` 表示64位浮点数，精度至少15位数字。
+
+- `Float` 表示32位浮点数，精度只有6位数字。
+  
+  > 优先选择 `Double`。
+
 ---
 ### 类型安全和类型推断
+
+- 没有显式指定类型，Swift 会使用*类型推断（type inference）*来选择合适的类型
+
+  ```swift
+  let meaningOfLife = 42
+  // meaningOfLife 会被推测为 Int 类型
+  ```
+
+  ```swift
+  let pi = 3.14159
+  // pi 会被推测为 Double 类型
+  ```
+
+  ```swift
+  let anotherPi = 3 + 0.14159
+  // anotherPi 会被推测为 Double 类型
+  ```
+
 ---
 ### 数值型字面量
+
+- 一个*十进制*数，没有前缀
+
+- 一个*二进制*数，前缀是 `0b`
+
+- 一个*八进制*数，前缀是 `0o`
+
+- 一个*十六进制*数，前缀是 `0x`
+
+  ```swift
+  let decimalInteger = 17
+  let binaryInteger = 0b10001       // 二进制的17
+  let octalInteger = 0o21           // 八进制的17
+  let hexadecimalInteger = 0x11     // 十六进制的17	
+  ```
+
+  
+  
+  十进制数的指数为 `exp`，那这个数相当于基数和10^exp 的乘积：
+  
+- `1.25e2` 表示 1.25 × 10^2，等于 `125.0`。
+
+- `1.25e-2` 表示 1.25 × 10^-2，等于 `0.0125`。
+
+  
+
+十六进制数的指数为 `exp`，那这个数相当于基数和2^exp 的乘积
+
+- `0xFp2` 表示 15 × 2^2，等于 `60.0`。
+- `0xFp-2` 表示 15 × 2^-2，等于 `3.75`。
+
+
+
+- 整数和浮点数, 都可添加额外的零、下划线
+
+  ```swift
+  let paddedDouble = 000123.456
+  let oneMillion = 1_000_000
+  let justOverOneMillion = 1_000_000.000_000_1
+  ```
+
+  
+
 ---
 ### 数值型类型转换
+
+
+
 #### 整数转换
+
+- `Int8`  存储数字范围-128`~`127
+
+- `UInt8` 存储数字范围0`~`255
+
+  ```swift
+  let cannotBeNegative: UInt8 = -1
+  // UInt8 类型不能存储负数，所以会报错
+  let tooBig: Int8 = Int8.max + 1
+  // Int8 类型不能存储超过最大值的数，所以会报错
+  ```
+
+  ```swift
+  let twoThousand: UInt16 = 2_000
+  let one: UInt8 = 1
+  let twoThousandAndOne = twoThousand + UInt16(one)
+  ```
+
+  > - `SomeType(ofInitialValue)` 是调用 Swift 构造器并传入一个初始值的默认方法。
+  >
+  > - 不能传入任意类型的值，只能传入 `UInt16` 内部有对应构造器的值。可以扩展现有的类型, 让它可以接收其他类型的值（包括自定义类型）。请参考 [扩展](#扩展构造器)。
+
 #### 整数和浮点数转换
+
+```swift
+let integerPi = Int(pi)
+// integerPi 等于 3，所以被推测为 Int 类型
+```
+
+- 浮点值会被截断。也就是说 `4.75` 会变成 `4`，`-3.9` 会变成 `-3`。
+
+  > 结合数字类常量和变量不同于结合数字类字面量, 字面量 `3` 可以直接和字面量 `0.14159` 相加，因为数字字面量本身没有明确的类型。它们的类型只在编译器需要求值的时候被推测。
+
 ---
 ### 类型别名
+
+- 使用 `typealias` 关键字来定义类型别名。
+
+  ```swift
+  typealias AudioSample = UInt16
+  ```
+
+  
+
 ---
 ### 布尔值
+
+
+
 ---
 ### 元组
 ---
@@ -527,7 +642,7 @@ let maxValue = UInt8.max  // maxValue 为 255，是 UInt8 类型
 # 扩展
 ## 扩展的语法
 ## 计算型属性
-## 构造器
+## 扩展构造器
 ## 方法
 ### 可变实例方法
 ## 下标
@@ -654,3 +769,4 @@ let maxValue = UInt8.max  // maxValue 为 255，是 UInt8 类型
 ### 自定义中缀运算符的优先级
 
 # 语言参考
+
