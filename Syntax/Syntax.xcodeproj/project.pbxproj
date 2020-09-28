@@ -7,12 +7,22 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		635B602E251FB7FC007F53B1 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 635B602D251FB7FC007F53B1 /* main.swift */; };
 		638F8D80251E12300017D655 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 638F8D7F251E12300017D655 /* main.swift */; };
 		638F8D90251E75800017D655 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 638F8D8F251E75800017D655 /* main.swift */; };
 		638F8D9D251E98810017D655 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 638F8D9C251E98810017D655 /* main.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		635B6029251FB7FC007F53B1 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		638F8D7A251E12300017D655 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -43,6 +53,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		635B602B251FB7FC007F53B1 /* 基本运算符 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "基本运算符"; sourceTree = BUILT_PRODUCTS_DIR; };
+		635B602D251FB7FC007F53B1 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		638F8D7C251E12300017D655 /* Syntax */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Syntax; sourceTree = BUILT_PRODUCTS_DIR; };
 		638F8D7F251E12300017D655 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		638F8D8D251E75800017D655 /* Swift初现 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "Swift初现"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -52,6 +64,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		635B6028251FB7FC007F53B1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		638F8D79251E12300017D655 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -76,12 +95,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		635B602C251FB7FC007F53B1 /* 基本运算符 */ = {
+			isa = PBXGroup;
+			children = (
+				635B602D251FB7FC007F53B1 /* main.swift */,
+			);
+			path = "基本运算符";
+			sourceTree = "<group>";
+		};
 		638F8D73251E12300017D655 = {
 			isa = PBXGroup;
 			children = (
 				638F8D7E251E12300017D655 /* Syntax */,
 				638F8D8E251E75800017D655 /* Swift初现 */,
 				638F8D9B251E98810017D655 /* 基础部分 */,
+				635B602C251FB7FC007F53B1 /* 基本运算符 */,
 				638F8D7D251E12300017D655 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -92,6 +120,7 @@
 				638F8D7C251E12300017D655 /* Syntax */,
 				638F8D8D251E75800017D655 /* Swift初现 */,
 				638F8D9A251E98810017D655 /* 基础部分 */,
+				635B602B251FB7FC007F53B1 /* 基本运算符 */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -123,6 +152,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		635B602A251FB7FC007F53B1 /* 基本运算符 */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 635B6031251FB7FC007F53B1 /* Build configuration list for PBXNativeTarget "基本运算符" */;
+			buildPhases = (
+				635B6027251FB7FC007F53B1 /* Sources */,
+				635B6028251FB7FC007F53B1 /* Frameworks */,
+				635B6029251FB7FC007F53B1 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "基本运算符";
+			productName = "基本运算符";
+			productReference = 635B602B251FB7FC007F53B1 /* 基本运算符 */;
+			productType = "com.apple.product-type.tool";
+		};
 		638F8D7B251E12300017D655 /* Syntax */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 638F8D83251E12300017D655 /* Build configuration list for PBXNativeTarget "Syntax" */;
@@ -183,6 +229,9 @@
 				LastSwiftUpdateCheck = 1200;
 				LastUpgradeCheck = 1200;
 				TargetAttributes = {
+					635B602A251FB7FC007F53B1 = {
+						CreatedOnToolsVersion = 12.0.1;
+					};
 					638F8D7B251E12300017D655 = {
 						CreatedOnToolsVersion = 12.0.1;
 					};
@@ -210,11 +259,20 @@
 				638F8D7B251E12300017D655 /* Syntax */,
 				638F8D8C251E75800017D655 /* Swift初现 */,
 				638F8D99251E98810017D655 /* 基础部分 */,
+				635B602A251FB7FC007F53B1 /* 基本运算符 */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
+		635B6027251FB7FC007F53B1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				635B602E251FB7FC007F53B1 /* main.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		638F8D78251E12300017D655 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -242,6 +300,28 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		635B602F251FB7FC007F53B1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = VU862J6TYQ;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		635B6030251FB7FC007F53B1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = VU862J6TYQ;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		638F8D81251E12300017D655 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -426,6 +506,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		635B6031251FB7FC007F53B1 /* Build configuration list for PBXNativeTarget "基本运算符" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				635B602F251FB7FC007F53B1 /* Debug */,
+				635B6030251FB7FC007F53B1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		638F8D77251E12300017D655 /* Build configuration list for PBXProject "Syntax" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

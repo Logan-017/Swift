@@ -176,3 +176,7 @@ if possibleString1  !=  nil {
 if let definiteString =  possibleString1 {
     print(definiteString)
 }
+
+func canThrowAnError() throws {
+    
+}

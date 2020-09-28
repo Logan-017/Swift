@@ -3,6 +3,7 @@
 
 - 参考资料：
   - [Swift 官方文档](https://docs.swift.org/swift-book/)
+  - [cnSwift 翻译组](https://www.cnswift.org)
   - [SwiftGG 翻译组](https://swiftgg.gitbook.io/swift/)
 
 
@@ -101,8 +102,11 @@ occupations = [:]
 ### 泛型
 
 ## Swift 版本修订记录
-[中文](https://swiftgg.gitbook.io/swift/huan-ying-shi-yong-swift/04_revision_history)
-[英文](https://docs.swift.org/swift-book/RevisionHistory/RevisionHistory.html)
+[cnSwift](https://www.cnswift.org/document-revision-history)
+
+[SwiftGG](https://swiftgg.gitbook.io/swift/huan-ying-shi-yong-swift/04_revision_history)
+
+[Apple官方](https://docs.swift.org/swift-book/RevisionHistory/RevisionHistory.html)
 
 # Swift 教程
 ## 基础部分
@@ -360,7 +364,7 @@ if i {
 ---
 ### 元组（tuples）
 
-- 场景：可将不同数据类型，但同一业务的数据，集合在一起
+- 场景：可将不同数据类型，但同一个功能业务接口的数据，集合在一起
 
 - 元组内的值可以是任意类型，并不要求是相同类型。
 
@@ -574,26 +578,126 @@ if let definiteString =  possibleString1 {
 
 ---
 ### 错误处理（error handling）
+
+
+
 ---
 ### 断言和先决条件
 #### 使用断言进行调试
 #### 强制执行先决条件
 
+# 基本运算符（Basic Operators）
 
-# 基本运算符
+- 赋值符（`=`）不再有返回值。(避免了手误将（`==`）写成（`=`）不报错的问题)
+- 算术运算符（`+`，`-`，`*`，`/`，`%` 等）的结果，会被检查是否值溢出（[实现允许溢出](#溢出运算符)）
+- Swift 提供 C 没有的区间运算符，如 `a..<b` 或 `a...b`，表达一个区间内的数值
+- 本章节只讲基本运算符，自定义运算符、运算符重载请看[高级运算符](#高级运算符)
 
-## 术语
+## 术语（Terminology）
+
+- *一元*运算符（操作一个目标）
+  - 前置运算符：如 `!b`
+  - 后置运算符：如 `c!`
+- *二元*运算符（操作两个目标）
+  - 如 `2 + 3`
+- *三元*运算符（操作三个目标）
+  - 和 C 语言一样，Swift 只有一个三元运算符，就是三目运算符（`a ? b : c`）
+
 ---
-## 赋值运算符
+## 赋值运算符(Assignment Operator)
+
+- 赋值元祖
+
+```swift
+let (x, y) = (1, 2)
+// 现在 x 等于 1，y 等于 2
+```
+
+- 与 C 语言和 Objective-C 不同，Swift 的赋值操作并不返回任何值
+- 避免把 （`==`）错写成（`=`）这类错误的出现
+
+```swift
+if x = y {
+    // 此句错误，因为 x = y 并不返回任何值
+}
+```
+
+
+
 ---
-## 算术运算符
+## 算术运算符(Arithmetic Operators)
+
+- （所有数值类型）都支持了四则*算术运算符*
+  - 加法（`+`）
+  - 减法（`-`）
+  - 乘法（`*`）
+  - 除法（`/`）
+- 加法运算符也可用于 `String` 的拼接：
+
+```swift
+"hello, " + "world"  // 等于 "hello, world"
+```
+
+
+
 ### 求余运算符
+
+- 求余(remainder)运算符（`%`）在其他语言也叫*取模(*modulo*)运算符*
+
+```swift
+9 % 4    // 等于 1
+```
+
+```swift
+-9 % 4   // 等于 -1
+```
+
+- 对负数 `b` 求余时，`b` 的符号会被忽略。这意味着 `a % b` 和 `a % -b` 的结果是相同的
+
 ### 一元负号运算符
+
+```swift
+let three = 3
+let minusThree = -three       // minusThree 等于 -3
+let plusThree = -minusThree   // plusThree 等于 3, 或 "负负3" = 3
+```
+
 ### 一元正号运算符
+
+```swift
+let minusSix = -6
+let alsoMinusSix = +minusSix  // alsoMinusSix 等于 -6
+```
+
 ---
 ## 组合赋值运算符
+
+- 组合加运算（`+=`）
+
+```swift
+var a = 1
+a += 2
+// a 现在是 3
+```
+
+> 复合赋值运算没有返回值，`let b = a += 2` 这类代码是错误
+
+更多 Swift 标准库运算符的信息，请看 [运算符声明](https://developer.apple.com/documentation/swift/operator_declarations)。 ‌
+
 ---
 ## 比较运算符（Comparison Operators）
+
+支持以下的比较运算符：
+
+- 等于（`a == b`）
+- 不等于（`a != b`）
+- 大于（`a > b`）
+- 小于（`a < b`）
+- 大于等于（`a >= b`）
+- 小于等于（`a <= b`）
+
+
+
 ---
 ## 三元运算符（Ternary Conditional Operator）
 ---
