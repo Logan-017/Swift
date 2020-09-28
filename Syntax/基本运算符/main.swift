@@ -21,5 +21,31 @@ print("--------------------")
 print("9 % 4 = \(9 % 4)")
 print("9 % -4 = \(9 % -4)")
 
-// MARK:- 
-let obj
+// MARK:- 恒等（===）和不恒等（!==）,  判断两个对象是否引用同一个对象实例
+let obj1 = NSObject()
+let obj11 = obj1
+
+let obj2 = NSObject()
+
+if obj1 == obj11 {
+    print("obj1 === obj11")
+}else {
+    print("obj1 !== obj11")
+}
+
+if obj1 !== obj2 {
+    print("obj1 !== obj2")
+}else {
+    print("obj1 === obj2")
+}
+
+// MARK:- 字符串相等判断(==)
+let str1 = "hellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohello"
+let str2 = "hellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohello"
+
+if str1 == str2  {
+    print("str1 == str2")
+}
+
+
+

@@ -1,4 +1,7 @@
+
+
 # 简介
+
 - Swift 学习笔记 + 练习代码。
 
 - 参考资料：
@@ -696,24 +699,204 @@ a += 2
 - 大于等于（`a >= b`）
 - 小于等于（`a <= b`）
 
+```swift
+let name = "world"
+if name == "world" {
+    print("hello, world")
+} else {
+    print("I'm sorry \(name), but I don't recognize you")
+}
+// 输出“hello, world", 因为 `name` 就是等于 "world”
+```
 
+- 字符串相等判断使用 ==（OC中==，表示两个对象的指针变量指向的地址相同）
 
 ---
 ## 三元运算符（Ternary Conditional Operator）
+
+- 问题 ? 答案 1 : 答案 2
+- 缩写形式：
+
+```swift
+if question {
+    answer1
+} else {
+    answer2
+}
+```
+
+- 滥用三元运算符会降低代码可读性，避免在一个复合语句中使用多个三元运算符。
+
 ---
-## 空合运算符（Nil Coalescing Operator）
+## 空合并运算符（Nil Coalescing Operator）
+
+- 场景：设置/返回 可选类型数据没有值/nil时的默认值
+
+- *空合运算符*（`a ?? b`）, a有值就解包，否则返回默认值b。
+- a必须是Optional类型，b跟a的存储类型一样（a有值解包后的类型）
+- 等价于以下三元运算符的代码：
+
+```swift
+a != nil ? a! : b
+```
+
+> 如果 `a` 为非空值（`non-nil`），那么值 `b` 将不会被计算。这也就是所谓的*短路求值*。
+
 ---
 ## 区间运算符（Range Operators）
-### 闭区间运算符
-### 半开区间运算符
-### 单侧区间
+
+- 几种方便表达一个区间的值的*区间运算符*。
+
+### 闭区间运算符(Closed Range Operator)
+
+- 场景：索引不算0/不是从0开始的情况
+
+- *闭区间运算符*（`a...b`）定义一个包含从 `a` 到 `b`（包括 `a` 和 `b`）的所有值的区间。`a` 的值不能超过 `b`。
+- 遍历/迭代
+
+```swift
+for index in 1...5 {
+    print("\(index) * 5 = \(index * 5)")
+}
+// 1 * 5 = 5
+// 2 * 5 = 10
+// 3 * 5 = 15
+// 4 * 5 = 20
+// 5 * 5 = 25
+```
+
+
+
+### 半开区间运算符(Half-Open Range Operator)
+
+- 场景：算0的情况
+
+- *半开区间运算符*（`a..<b`）定义一个从 `a` 到 `b` 但不包括 `b` 的区间
+
+```swift
+let names = ["Anna", "Alex", "Brian", "Jack"]
+let count = names.count
+for i in 0..<count {
+    print("第 \(i + 1) 个人叫 \(names[i])")
+}
+// 第 1 个人叫 Anna
+// 第 2 个人叫 Alex
+// 第 3 个人叫 Brian
+// 第 4 个人叫 Jack
+```
+
+
+
+### 单侧区间(One-Sided Ranges)
+
+- 场景：某个元素开始，到最后一个元素结束
+
+- 一侧无限延伸
+
+```swift
+for name in names[2...] {
+    print(name)
+}
+// Brian
+// Jack
+
+for name in names[...2] {
+    print(name)
+}
+// Anna
+// Alex
+// Brian
+```
+
+- 半开区间操作符也有单侧表达形式
+
+```swift
+for name in names[..<2] {
+    print(name)
+}
+// Anna
+// Alex
+```
+
+- 单侧区间可以在下标里使用
+- 查看一个单侧区间是否包含某个特定的值
+
+```swift
+let range = ...5
+range.contains(7)   // false
+range.contains(4)   // true
+range.contains(-1)  // true
+```
+
+
+
 ---
 ## 逻辑运算符（Logical Operators）
-### 逻辑非运算符
-### 逻辑与运算符
-### 逻辑或运算符
-### 逻辑运算符组合计算
-### 使用括号来明确优先级
+
+- 逻辑运算符操作(修改或合并) 布尔逻辑值 true 和 false
+- 与C语言一致
+  - 逻辑非（`!a`）
+  - 逻辑与（`a && b`）
+  - 逻辑或（`a || b`）
+
+### 逻辑非运算符（Logical NOT Operator）
+
+- 直接写在要进行运算的值前边，不加空格，读作 `非 a`
+
+```swift
+let allowedEntry = false
+if !allowedEntry {
+    print("ACCESS DENIED")
+}
+// 输出“ACCESS DENIED”
+```
+
+- 避免使用双重逻辑非运算，或混乱的逻辑语句。
+
+### 逻辑与运算符（Logical AND Operator）
+
+- （`a && b`）表达了只有 `a` 和 `b` 的值都为 `true`
+
+- 如果第一个值为 `false`，那么是不去计算第二个值的，因为它已经不可能影响整个表达式的结果了。这被称做*短路计算（short-circuit evaluation）*。
+
+### 逻辑或运算符（Logical OR Operator）
+
+- 逻辑或运算符（`a || b`）是一个由两个连续的 `|` 组成的中置运算符
+- 逻辑或也是「短路计算」的，当左端的表达式为 `true` 时，将不计算右边的表达式了，因为它不可能改变整个表达式的值了。
+
+### 逻辑运算符组合计算（Combining Logical Operators）
+
+```swift
+if enteredDoorCode && passedRetinaScan || hasDoorKey || knowsOverridePassword {
+    print("Welcome!")
+} else {
+    print("ACCESS DENIED")
+}
+// 输出“Welcome!”
+```
+
+- 如果我们输入了正确的密码并通过了视网膜扫描，或者我们有一把有效的钥匙，又或者我们知道紧急情况下重置的密码，我们就能把门打开进入。
+
+> Swift 逻辑操作符 `&&` 和 `||` 是左结合的，这意味着拥有多元逻辑操作符的复合表达式，优先计算最左边的子表达式。
+
+> 译注
+>
+> [1]：优先级问题： ~~在 Swift 编程语言全文当中并没有提到逻辑运算符的优先级问题（即默认相等）~~，总之，它们是有优先级的，在[标准库引用文档](https://developer.apple.com/library/mac/documentation/Swift/Reference/Swift_StandardLibrary_Operators/index.html#//apple_ref/doc/uid/TP40016054)中提及。
+
+### 使用括号来明确优先级(Explicit Parentheses)
+
+- 使用括号来明确优先级，增加代码可读性
+
+```swift
+if (enteredDoorCode && passedRetinaScan) || hasDoorKey || knowsOverridePassword {
+    print("Welcome!")
+} else {
+    print("ACCESS DENIED")
+}
+// 输出“Welcome!”
+```
+
+
 
 ---
 
