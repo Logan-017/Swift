@@ -577,8 +577,6 @@ if let definiteString =  possibleString1 {
 }
 ```
 
-
-
 ---
 ### 错误处理（error handling）
 
@@ -879,10 +877,6 @@ if enteredDoorCode && passedRetinaScan || hasDoorKey || knowsOverridePassword {
 
 > Swift 逻辑操作符 `&&` 和 `||` 是左结合的，这意味着拥有多元逻辑操作符的复合表达式，优先计算最左边的子表达式。
 
-> 译注
->
-> [1]：优先级问题： ~~在 Swift 编程语言全文当中并没有提到逻辑运算符的优先级问题（即默认相等）~~，总之，它们是有优先级的，在[标准库引用文档](https://developer.apple.com/library/mac/documentation/Swift/Reference/Swift_StandardLibrary_Operators/index.html#//apple_ref/doc/uid/TP40016054)中提及。
-
 ### 使用括号来明确优先级(Explicit Parentheses)
 
 - 使用括号来明确优先级，增加代码可读性
@@ -901,18 +895,224 @@ if (enteredDoorCode && passedRetinaScan) || hasDoorKey || knowsOverridePassword 
 ---
 
 # 字符串和字符
+
+- *字符串* String是字符Character的集合
+- 通过 `+` 符号就可拼接两个字符串
+- 能否更改字符串的值，取决于其被定义为常量还是变量
+
+> Swift 的 `String` 类型与 Foundation `NSString` 类进行了无缝桥接。调用 `NSString` 的方法，无需进行类型转换。
+>
+> 
+>
+> 更多关于在 Foundation 和 Cocoa 中使用 `String` 的信息请查看 [*Bridging Between String and NSString*](https://developer.apple.com/documentation/swift/string#2919514)。
+
 ## 字符串字面量
+
+- 字符串字面量作为常量或者变量的初始值：
+
+```swift
+let someString = "Some string literal value"
+```
+
 ### 多行字符串字面量
+
+- 用三个双引号引起来的一系列字符
+
+```swift
+let quotation = """
+The White Rabbit put on his spectacles.  "Where shall I begin,
+please your Majesty?" he asked.
+ 
+"Begin at the beginning," the King said gravely, "and go on
+till you come to the end; then stop."
+"""
+```
+
+- 为代码可读性，可在代码里加反斜杠（`\`），对字符串换行（输出的字符串不换行, 且没有反斜杠）
+
+```swift
+let softWrappedQuotation = """
+The White Rabbit put on his spectacles.  "Where shall I begin, \
+please your Majesty?" he asked.
+
+"Begin at the beginning," the King said gravely, "and go on \
+till you come to the end; then stop."
+"""
+```
+
+- 可以在代码中，使用缩进，让代码工整对齐，但字符串里不会有影响
+
+![](https://docs.swift.org/swift-book/_images/multilineStringWhitespace_2x.png)
+
+- 如果你在某行的空格超过了结束的双引号（ """ ），那么这些空格*会*被包含。
+
 ### 字符串字面量的特殊字符
+
+- 转义特殊字符  \0 (空字符)， \\ (反斜杠)， \t (水平制表符)， \n (换行符)， \r(回车符)， \" (双引号) 以及 \' (单引号)
+
+- Unicode 标量，写成 `\u{n}`(u 为小写)，其中 `n` 为任意一到八位十六进制数且可用的 Unicode 位码
+
+```swift
+let wiseWords = "\"Imagination is more important than knowledge\" - Einstein"
+// "Imageination is more important than knowledge" - Enistein
+let dollarSign = "\u{24}"             // $，Unicode 标量 U+0024
+let blackHeart = "\u{2665}"           // ♥，Unicode 标量 U+2665
+let sparklingHeart = "\u{1F496}"      // 💖，Unicode 标量 U+1F496
+```
+
+- 多行字符串, 直接使用双引号（`"`）而不必加上转义符（`\`）
+- 多行字符串字面量中使用 `"""`, 使用至少一个转义符（`\`）
+
+```swift
+let threeDoubleQuotes = """
+Escaping the first quote \"""
+Escaping all three quotes \"\"\"
+"""
+```
+
 ### 扩展字符串分隔符
---
+- 井号（ # ）包裹，可以使特殊字符不生效
+
+```swift
+#"Line 1\nLine 2"#
+```
+
+- 使某个特殊字符生效，使用#号标记
+
+```swift
+#"Line 1\#nLine 2"#
+```
+
+```swift
+###"Line1\###nLine2"###
+```
+
+- 多行字符串，包含"""
+
+```swift
+let threeMoreDoubleQuotationMarks = #"""
+Here are three more double quotes: """
+"""#
+```
+
 ## 初始化空字符串
+
+```swift
+var emptyString = ""               // 空字符串字面量
+var anotherEmptyString = String()  // 初始化方法
+// 两个字符串均为空并等价。
+```
+
+- 通过检查 `Bool` 类型的 `isEmpty` 属性来判断该字符串是否为空
+
+```swift
+if emptyString.isEmpty {
+    print("Nothing to see here")
+}
+// 打印输出：“Nothing to see here”
+```
+
 ## 字符串可变性
+
+```swift
+var variableString = "Horse"
+variableString += " and carriage"
+// variableString 现在为 "Horse and carriage"
+
+let constantString = "Highlander"
+constantString += " and another Highlander"
+// 这会报告一个编译错误（compile-time error） - 常量字符串不可以被修改。
+```
+
 ## 字符串是值类型
+
+- Swift 中 `String` 类型是*值类型*
+
+- 如果你创建了一个新的字符串，那么当其进行常量、变量赋值操作，或在函数/方法中传递时，会进行值拷贝。
+
 ## 使用字符
+
+- `for-in` 循环来遍历, 获取字符串中每一个字符的值
+
+```swift
+for character in "Dog!🐶" {
+    print(character)
+}
+// D
+// o
+// g
+// !
+// 🐶
+```
+
+- `Character` 类型
+
+```swift
+let exclamationMark: Character = "!"
+```
+
+- 字符串可通过值类型为 `Character` 的数组来初始化
+
+```swift
+let catCharacters: [Character] = ["C", "a", "t", "!", "🐱"]
+let catString = String(catCharacters)
+print(catString)
+// 打印输出：“Cat!🐱”
+```
+
+
+
 ## 连接字符串和字符
+
+- 通过加法运算符（`+`）相加在一起（或称“连接”）创建一个新的字符串：
+
+```swift
+let string1 = "hello"
+let string2 = " there"
+var welcome = string1 + string2
+// welcome 现在等于 "hello there"
+```
+
+- 通过加法赋值运算符（`+=`）将一个字符串, 添加到另一个字符串变量上：
+
+```swift
+var instruction = "look over"
+instruction += string2
+// instruction 现在等于 "look over there"
+```
+
+> 你不能把 String或者 Character追加到已经存在的 Character变量当中，因为 Character值能且只能包含一个字符。
+
 ## 字符串插值
+
+- *字符串插值*：在字符串中插入 常量、变量、字面量、表达式
+
+```swift
+let multiplier = 3
+let message = "\(multiplier) times 2.5 is \(Double(multiplier) * 2.5)"
+// message 是 "3 times 2.5 is 7.5"
+```
+
+- 扩展字符串分隔符 使插值符号失效/不生效
+
+```swift
+print(#"Write an interpolated string in Swift using \(multiplier)."#)
+// 打印 "Write an interpolated string in Swift using \(multiplier)."
+```
+
+- 部分生效
+
+```swift
+print(#"\(6 * 7)  times  is \#(6 * 7)."#)
+// 打印 \(6 * 7)  times  is 42.
+```
+
 ## Unicode
+
+- Swift 的 `String` 和 `Character` 类型是完全兼容 Unicode 标准的。
+
+
+
 ### Unicode 标量
 ### 可扩展的字形群集
 ## 计算字符数量
