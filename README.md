@@ -1111,17 +1111,205 @@ print(#"\(6 * 7)  times  is \#(6 * 7)."#)
 
 - Swift 的 `String` 和 `Character` 类型是完全兼容 Unicode 标准的。
 
-
-
 ### Unicode 标量
+
+- `String` 类型是基于 *Unicode 标量* 建立
+
+- Unicode 标量: 是对应字符或者修饰符的唯一的 21 位数字
+- `U+0061` 表示小写的拉丁字母（`LATIN SMALL LETTER A`）（"`a`"）
+- `U+1F425` 表示小鸡表情（`FRONT-FACING BABY CHICK`）（"`🐥`"）
+
+```swift
+print("\u{0061}")// a
+print("--------------------")
+print("\u{1F425}")// 🐥
+print("--------------------")
+```
+
+> Unicode 标量码位位于 U+0000到 U+D7FF或者 U+E000到 U+10FFFF之间。Unicode 标量码位不包括从 U+D800到 U+DFFF的16位码元码位。
+
+- 不是所有的 21 位 Unicode 标量都指定了字符——有些标量是为将来所保留或用于 UTF-16 编码。
+- 有了字符的标量通常来说也会有个名字，比如上边例子中的 ` LATIN SMALL LETTER A` 和` FRONT-FACING BABY CHICK `。
+
 ### 可扩展的字形群集
-## 计算字符数量
+
+- `Character` 类型代表一个*可扩展的字形集*
+- 一个可扩展的字形群构成了人类可读的单个字符，它由一个或多个 Unicode 标量的序列组成。
+
+---
+
+- 字母 `é` 代表了一个单一的 Swift 的 `Character` 值, 同时代表了一个可扩展的字形群
+- 第一种情况，这个字形群包含一个单一标量
+- 第二种情况，它是包含两个标量的字形群
+
+```swift
+let eAcute: Character = "\u{E9}"                         // é
+let combinedEAcute: Character = "\u{65}\u{301}"          // e 后面加上  ́
+// eAcute 是 é, combinedEAcute 是 é
+```
+
+---
+
+- 可扩展的字形集:  是一个将许多复杂的脚本字符, 表示为单个字符值的灵活方式
+
+- 朝鲜语字母表的韩语音节能表示为组合或分解的有序排列
+
+```swift
+let precomposed: Character = "\u{D55C}"                  // 한
+let decomposed: Character = "\u{1112}\u{1161}\u{11AB}"   // ᄒ, ᅡ, ᆫ
+// precomposed 是 한, decomposed 是 한
+```
+
+---
+
+- 扩展字形集群允许封闭标记的标量 (比如 COMBINING ENCLOSING CIRCLE, 或者说 U+20DD) 作为单一 Character值来圈住其他 Unicode 标量：
+
+```swift
+let enclosedEAcute: Character = "\u{E9}\u{20DD}"
+// enclosedEAcute 是 é⃝
+```
+
+---
+
+- 区域指示符号的 Unicode 标量可以成对组合来成为单一的 Character值，比如说这个 REGIONAL INDICATOR SYMBOL LETTER U ( U+1F1FA)和 REGIONAL INDICATOR SYMBOL LETTER S (U+1F1F8)：
+
+```swift
+let regionalIndicatorForUS: Character = "\u{1F1FA}\u{1F1F8}"
+// regionalIndicatorForUS 是 🇺🇸
+```
+
+
+
+## 计算字符数量/字符统计
+
+- Character值的总数，使用字符串的 count属性
+
+```swift
+let unusualMenagerie = "Koala 🐨, Snail 🐌, Penguin 🐧, Dromedary 🐪"
+print("unusualMenagerie has \(unusualMenagerie.count) characters")
+// 打印输出“unusualMenagerie has 40 characters”
+```
+
+> 注意: 使用可拓展的字符群集作为 `Character` 值来连接或改变字符串时，并不一定会更改字符串的字符数量。
+
+```swift
+var word = "cafe"
+print("the number of characters in \(word) is \(word.count)")
+// 打印输出“the number of characters in cafe is 4”
+
+word += "\u{301}"    // 拼接一个重音，U+0301
+
+print("the number of characters in \(word) is \(word.count)")
+// 打印输出“the number of characters in café is 4”			
+```
+
+> - 扩展字形集群能够组合一个或者多个 Unicode 标量。这意味着不同的字符——以及相同字符的不同表示——能够获得不同大小的内存来储存. 特殊的长字符串值，要注意 count属性为了确定字符串中的字符要遍历整个字符串的 Unicode 标量。
+> - `count` 属性返回的字符数量并不总是与包含相同字符的 `NSString` 的 `length` 属性相同
+> - `NSString` 的 `length` 属性是利用 UTF-16 表示的十六位代码单元数字，而不是 Unicode 可扩展的字符群集
+
 ## 访问和修改字符串
+
+- 通过字符串的属性和方法来访问和修改它，当然也可以用下标语法完成
+
 ### 字符串索引
+
+- 每一个 `String` 值都有一个关联的索引（*index*）类型，`String.Index`，它对应着字符串中的每一个 `Character` 的位置
+- 使用 startIndex属性来访问 String中第一个 Character的位置
+- endIndex属性就是 String中最后一个字符后的位置
+- endIndex属性并不是字符串下标脚本的合法实际参数。如果String为空，则 startIndex与 endIndex相等。
+- 用 index(before:) 和 index(after:) 方法来访问给定索引的前后
+- 给定索引更远的索引，你可以使用 index(_:offsetBy:) 方法
+
+```swift
+let greeting = "Guten Tag!"
+greeting[greeting.startIndex]
+// G
+greeting[greeting.index(before: greeting.endIndex)]
+// !
+greeting[greeting.index(after: greeting.startIndex)]
+// u
+let index = greeting.index(greeting.startIndex, offsetBy: 7)
+greeting[index]
+// a
+```
+
+- 获取越界索引对应的 `Character`，将引发一个运行时错误。
+
+```swift
+greeting[greeting.endIndex] // error
+greeting.index(after: greeting.endIndex) // error
+```
+
+- 用 `indices` 属性会创建一个包含全部索引的范围（`Range`）
+
+```swift
+for index in greeting.indices {
+   print("\(greeting[index]) ", terminator: "")
+}
+// 打印输出“G u t e n   T a g ! ”
+```
+
+> 可以在任何遵循了 Collection 协议的类型中使用 startIndex 和 endIndex 属性以及 index(before:) ，index(after:) 和 index(_:offsetBy:) 方法。这包括这里使用的 String ，还有集合类型比如 Array ，Dictionary 和 Set
+
 ### 插入和删除
+
+- 特定位置插入字符，使用 insert(_:at:)方法
+- 插入一个段字符串, 调用 `insert(contentsOf:at:)` 方法
+
+```swift
+var welcome = "hello"
+welcome.insert("!", at: welcome.endIndex)
+// welcome 变量现在等于 "hello!"
+
+welcome.insert(contentsOf:" there", at: welcome.index(before: welcome.endIndex))
+// welcome 变量现在等于 "hello there!"
+```
+
+- 移除字符，使用 remove(at:)方法
+- 移除一小段字符串，removeSubrange(_:) 
+
+```swift
+welcome.remove(at: welcome.index(before: welcome.endIndex))
+// welcome 现在等于 "hello there"
+
+let range = welcome.index(welcome.endIndex, offsetBy: -6)..<welcome.endIndex
+welcome.removeSubrange(range)
+// welcome 现在等于 "hello"	
+```
+
+> 任意一个确认的并遵循 `RangeReplaceableCollection` 协议的类型里面，可使用 `insert(_:at:)`、`insert(contentsOf:at:)`、`remove(at:)` 和 `removeSubrange(_:)` 方法, 在如上文用在 `String` 中，也用在 `Array`、`Dictionary` 和 `Set` 
+
 ### 子字符串
+
+- 使用下标或者 `prefix(_:)` 之类的方法 —— 就可以得到一个 `Substring` 的实例，而非另外一个 `String`
+- `Substring` 绝大部分函数都跟 `String` 一样
+- 与字符串不同，在字符串上执行动作的话你应该使用子字符串执行短期处理。当你想要把结果保存得长久一点时，你需要把子字符串转换为 String 实例
+
+```swift
+let greeting = "Hello, world!"
+let index = greeting.index(of: ",") ?? greeting.endIndex
+let beginning = greeting[..<index]
+// beginning is "Hello"
+ 
+// Convert the result to a String for long-term storage.
+let newString = String(beginning)
+```
+
+- `Substring` 可以重用原 `String` 的内存空间，或者另一个 `Substring` 的内存空间
+- `newString` 是一个 `String` —— 它是使用 `Substring` 创建的，拥有一片自己的内存空间。
+
+![img](https://docs.swift.org/swift-book/_images/stringSubstring_2x.png)
+
+> `String` 和 `Substring` 都遵循 [`StringProtocol`](https://developer.apple.com/documentation/swift/stringprotocol) 协议，这意味着操作字符串的函数使用 `StringProtocol` 会更加方便。你可以传入 `String` 或 `Substring` 去调用函数
+
 ## 比较字符串
+
+三种方式比较文本值：字符串字符相等、前缀相等和后缀相等。
+
 ### 字符串/字符相等
+
+
+
 ### 前缀/后缀相等
 ## 字符串的 Unicode 表示形式
 ### UTF-8 表示
