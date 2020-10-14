@@ -128,8 +128,14 @@ for idx in greeting.indices {
 }
 
 // Index(_rawBits:
-let myStr = "Hello World!"
-if let rangeFound = myStr.range(of: "ello"){
-    let nsRange = NSRange(rangeFound, in: myStr)
-    print("Found ello from \(nsRange.location) to \(nsRange.location + nsRange.length - 1)")
+//let myStr = "Hello World!"
+//if let rangeFound = myStr.range(of: "ello"){
+//    let nsRange = NSRange(rangeFound, in: myStr)
+//    print("Found ello from \(nsRange.location) to \(nsRange.location + nsRange.length - 1)")
+//}
+
+let dogString = "Dog‼🐶"
+for codeUnit in dogString.utf8 {
+    print("\(codeUnit) ", terminator: "")
+    print("--------------------")
 }

@@ -1308,13 +1308,127 @@ let newString = String(beginning)
 
 ### 字符串/字符相等
 
+```swift
+let quotation = "We're a lot alike, you and I."
+let sameQuotation = "We're a lot alike, you and I."
+if quotation == sameQuotation {
+    print("These two strings are considered equal")
+}
+// 打印输出“These two strings are considered equal”
+```
 
+- 两个字符串（或者两个字符）的可扩展的字形群集是标准相等，那它们是相等的, 
+- 只要可扩展的字形群集有同样的语言意义和外观, 即使它们是由不同的 Unicode 标量构成
+
+---
+
+- 如，`LATIN SMALL LETTER E WITH ACUTE`(`U+00E9`)就是标准相等于 `LATIN SMALL LETTER E`(`U+0065`)后面加上 `COMBINING ACUTE ACCENT`(`U+0301`)
+
+```swift
+// "Voulez-vous un café?" 使用 LATIN SMALL LETTER E WITH ACUTE
+let eAcuteQuestion = "Voulez-vous un caf\u{E9}?"
+
+// "Voulez-vous un café?" 使用 LATIN SMALL LETTER E and COMBINING ACUTE ACCENT
+let combinedEAcuteQuestion = "Voulez-vous un caf\u{65}\u{301}?"
+
+if eAcuteQuestion == combinedEAcuteQuestion {
+    print("These two strings are considered equal")
+}
+// 打印输出“These two strings are considered equal”
+```
+
+- 相反，英语中的 `LATIN CAPITAL LETTER A`(`U+0041`，或者 `A`)不等于俄语中的 `CYRILLIC CAPITAL LETTER A`(`U+0410`，或者 `A`)。两个字符看着是一样的，但却有不同的语言意义：
+
+```swift
+let latinCapitalLetterA: Character = "\u{41}"
+
+let cyrillicCapitalLetterA: Character = "\u{0410}"
+
+if latinCapitalLetterA != cyrillicCapitalLetterA {
+    print("These two characters are not equivalent")
+}
+// 打印“These two characters are not equivalent”
+```
+
+> 在 Swift 中，字符串和字符并不区分地域（not locale-sensitive）。
 
 ### 前缀/后缀相等
+
+- `hasPrefix(_:)`/`hasSuffix(_:)` 方法检查字符串是否有特定前缀/后缀，两个方法均接收一个 `String` 类型的参数，并返回一个布尔值
+
+```swift
+let romeoAndJuliet = [
+    "Act 1 Scene 1: Verona, A public place",
+    "Act 1 Scene 2: Capulet's mansion",
+    "Act 1 Scene 3: A room in Capulet's mansion",
+    "Act 1 Scene 4: A street outside Capulet's mansion",
+    "Act 1 Scene 5: The Great Hall in Capulet's mansion",
+    "Act 2 Scene 1: Outside Capulet's mansion",
+    "Act 2 Scene 2: Capulet's orchard",
+    "Act 2 Scene 3: Outside Friar Lawrence's cell",
+    "Act 2 Scene 4: A street in Verona",
+    "Act 2 Scene 5: Capulet's mansion",
+    "Act 2 Scene 6: Friar Lawrence's cell"
+]
+```
+
+- 用 `hasPrefix(_:)` 方法来计算话剧中第一幕的场景数：
+
+```swift
+var act1SceneCount = 0
+for scene in romeoAndJuliet {
+    if scene.hasPrefix("Act 1 ") {
+        act1SceneCount += 1
+    }
+}
+print("There are \(act1SceneCount) scenes in Act 1")
+// 打印输出“There are 5 scenes in Act 1”
+```
+
+- 用 `hasSuffix(_:)` 方法来计算发生在不同地方的场景数：
+
+```swift
+var mansionCount = 0
+var cellCount = 0
+for scene in romeoAndJuliet {
+    if scene.hasSuffix("Capulet's mansion") {
+        mansionCount += 1
+    } else if scene.hasSuffix("Friar Lawrence's cell") {
+        cellCount += 1
+    }
+}
+print("\(mansionCount) mansion scenes; \(cellCount) cell scenes")
+// 打印输出“6 mansion scenes; 2 cell scenes”
+```
+
 ## 字符串的 Unicode 表示形式
+
+- 一个 Unicode 字符串被写进文本文件或者其他储存时，字符串中的 Unicode 标量会用 Unicode 定义的几种 `编码格式`（encoding forms）编码
+- 每一个字符串中的小块编码都被称 `代码单元`（code units）, 包括 UTF-8 编码格式（编码字符串为 8 位的代码单元）， UTF-16 编码格式（编码字符串位 16 位的代码单元），以及 UTF-32 编码格式（编码字符串32位的代码单元）
+
+- 访问字符串的 Unicode 表示形式, 利用 `for-in` 来对字符串进行遍历
+- 其他三种 Unicode 兼容的方式访问字符串的值
+  - UTF-8 代码单元集合（利用字符串的 `utf8` 属性进行访问）
+  - UTF-16 代码单元集合（利用字符串的 `utf16` 属性进行访问）
+  - 21 位的 Unicode 标量值集合，也就是字符串的 UTF-32 编码格式（利用字符串的 `unicodeScalars` 属性进行访问）
+- `D`,`o`,`g`,`‼`(`DOUBLE EXCLAMATION MARK`, Unicode 标量 `U+203C`)和 `🐶`(`DOG FACE`，Unicode 标量为 `U+1F436`)组成的字符串中的每一个字符代表着一种不同的表示
+
+```swift
+let dogString = "Dog‼🐶"
+```
+
 ### UTF-8 表示
+
+- `String` 的 `utf8` 属性可访问它的 `UTF-8` 表示
+- 为 `String.UTF8View` 类型的属性，`UTF8View` 是无符号 8 位（`UInt8`）值的集合，每一个 `UInt8` 值都是一个字符的 UTF-8 表示
+
 ### UTF-16 表示
+
+- `String` 的 `utf16` 属性来访问它的 `UTF-16` 表示
+
 ### Unicode 标量表示
+
+- 你可以通过遍历 `String` 值的 `unicodeScalars` 属性来访问它的 Unicode 标量表示
 
 # 集合类型
 ## 集合的可变性
