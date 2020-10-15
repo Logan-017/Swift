@@ -1431,32 +1431,523 @@ let dogString = "Dog‼🐶"
 - 你可以通过遍历 `String` 值的 `unicodeScalars` 属性来访问它的 Unicode 标量表示
 
 # 集合类型
+
+- 数组（Array）：有序
+
+- 集合（Set）：无序无重复
+
+- 字典（Dictionary）：无序的键值对
+
+> Swift 的数组、集合和字典类型被实现为*泛型集合*
+
 ## 集合的可变性
+
+- let：不可变
+- var：增删改查
+
+> 建议-在不需要改变集合的时候创建不可变集合
+
 ## 数组（Arrays）
+
+- 有序储存+相同类型的值（相同类型的值可以重复出现。）
+
+> Swift 的 `Array` 类型被桥接到 Foundation 中的 `NSArray` 类。参见 [Bridging Between Array and NSArray](https://developer.apple.com/documentation/swift/array#2846730)。
+
 ### 数组的简单语法
+
+- 完整写法为 `Array<Element>`， `Element` 是数组唯一允许存在的数据类型
+- 简单写法`[Element]` （推荐）
+
 ### 创建一个空数组
+
+```swift
+// MARK:- 创建空数组
+var someInts =  [Int]()
+var someInts2 = Array<Int>()		
+```
+
+- 若根据上下文，数组数据类型确定，可直接：`[]`（一对空方括号）
+
 ### 创建一个带有默认值的数组
+
+- 创建特定大小+所有数据都被默认
+
+```swift
+var threeDoubles = Array(repeating: 0.0, count: 3)
+// threeDoubles 是一种 [Double] 数组，等价于 [0.0, 0.0, 0.0]		
+```
+
 ### 通过两个数组相加创建一个数组
+
+- 加法操作符（`+`）组合相同类型数组（新数组类型从两个数组的数据类型中推断出来）
+
+```swift
+var anotherThreeDoubles = Array(repeating: 2.5, count: 3)
+// anotherThreeDoubles 被推断为 [Double]，等价于 [2.5, 2.5, 2.5]
+
+var sixDoubles = threeDoubles + anotherThreeDoubles
+// sixDoubles 被推断为 [Double]，等价于 [0.0, 0.0, 0.0, 2.5, 2.5, 2.5]
+```
+
 ### 用数组字面量构造数组
+
+```swift
+var shoppingList: [String] = ["Eggs", "Milk"]
+// shoppingList 已经被构造并且拥有两个初始项。
+```
+
+-  当你用字面量构造-拥有相同类型值数组的时候
+
+```swift
+var shoppingList = ["Eggs", "Milk"]
+```
+
 ### 访问和修改数组
+
+- 数组的方法和属性来访问和修改数组，或者使用下标语法
+- 用数组的只读属性 `count`
+
+```swift
+print("The shopping list contains \(shoppingList.count) items.")
+// 输出“The shopping list contains 2 items.”（这个数组有2个项）
+```
+
+- 用布尔属性 `isEmpty` 作为一个缩写形式去检查 `count` 属性是否为 `0`
+
+```swift
+if shoppingList.isEmpty {
+    print("The shopping list is empty.")
+} else {
+    print("The shopping list is not empty.")
+}
+// 打印“The shopping list is not empty.”（shoppinglist 不是空的）
+```
+
+- 用 `append(_:)` 在数组后面添加新数据：
+
+```swift
+shoppingList.append("Flour")
+// shoppingList 现在有3个数据项，似乎有人在摊煎饼
+```
+
+- 用加法赋值运算符（`+=`）直接将另一个相同类型数组中的数据添加到该数组后面
+
+```swift
+shoppingList += ["Baking Powder"]
+// shoppingList 现在有四项了
+shoppingList += ["Chocolate Spread", "Cheese", "Butter"]
+```
+
+- 用*下标语法*来获取数组中的数据项
+
+```swift
+var firstItem = shoppingList[0]
+// 第一项是“Eggs”
+```
+
+> 注意
+>
+> 第一项在数组中的索引值是 `0` 而不是 `1`。 Swift 中的数组索引总是从零开始。
+
+- 用下标来改变某个有效索引值对应的数据值：
+
+```swift
+shoppingList[0] = "Six eggs"
+// 其中的第一项现在是“Six eggs”而不是“Eggs”
+```
+
+- 用下标改变多个值，即使新数据和原有数据的数量是不一样的。
+
+- 下面的例子把 `"Chocolate Spread"`、`"Cheese"` 和 `"Butter"` 替换为 `"Bananas"` 和 `"Apples"`
+
+```swift
+shoppingList[4...6] = ["Bananas", "Apples"]
+// shoppingList 现在有6项
+```
+
+- `insert(_:at:)` 方法-在指定索引值之前添加数据
+
+```swift
+shoppingList.insert("Maple Syrup", at: 0)
+// shoppingList 现在有7项
+// 现在是这个列表中的第一项是“Maple Syrup”
+```
+
+- 用 `remove(at:)` 方法来移除数组某一项，并且返回这个被移除的数据项（不需要的时候就可以无视它）
+
+```swift
+let mapleSyrup = shoppingList.remove(at: 0)
+// 索引值为0的数据项被移除
+// shoppingList 现在只有6项，而且不包括 Maple Syrup
+// mapleSyrup 常量的值等于被移除数据项“Maple Syrup”
+```
+
+> 注意索引越界：当 `count` 等于 0 时（说明这是个空数组），最大索引值一直是 `count - 1`，因为数组都是零起索引
+
+- 数据项被移除后数组中的空出项会被自动填补
+- 最后一项移除，可以使用 `removeLast()` 方法而不是 `remove(at:)` 方法来避免需要获取数组的 `count` 属性（也会返回被移除的数据项）
+
+```swift
+let apples = shoppingList.removeLast()
+// 数组的最后一项被移除了
+// shoppingList 现在只有5项，不包括 Apples
+// apples 常量的值现在等于字符串“Apples”
+```
+
 ### 数组的遍历
+
+- 用 `for-in` 循环来遍历数组中所有的数据项
+
+```swift
+for item in shoppingList {
+    print(item)
+}
+```
+
+- 需要值和索引值，可以使用 `enumerated()` 方法来进行数组遍历
+- `enumerated()` 返回一个由索引值和数据值组成的【元组数组】
+
+```swift
+for (index, value) in shoppingList.enumerated() {
+    print("Item \(String(index + 1)): \(value)")
+}
+// Item 1: Six eggs
+// Item 2: Milk
+// Item 3: Flour
+// Item 4: Baking Powder
+// Item 5: Bananas
+```
+
 ## 集合（Sets）
+
+- 存储相同类型+没有顺序要求的数据
+
+> 注意 Swift 的 `Set` 类型被桥接到 Foundation 中的 `NSSet` 类。
+>
+> 关于使用 Foundation 和 Cocoa 中 `Set` 的知识，参见 [Bridging Between Set and NSSet](https://developer.apple.com/documentation/swift/set#2845530)
+
 ### 集合类型的哈希值
+
+- 一个类型为了存储在集合中，该类型必须是*可哈希化*的
+- 一个哈希值是 `Int` 类型的，相等的对象哈希值必须相同，比如 `a == b`,因此必须 `a.hashValue == b.hashValue`
+- Swift 的所有基本类型（比如 `String`、`Int`、`Double` 和 `Bool`）默认都是可哈希化的
+
 ### 集合类型语法
+
+- Set<Element>
+- 跟数组不同，没有简化形式
+
 ### 创建和构造一个空的集合
+
+```swift
+var letters = Set<Character>()
+print("letters is of type Set<Character> with \(letters.count) items.")
+// 打印“letters is of type Set<Character> with 0 items.”
+```
+
+- 如果上下文提供了类型信息，比如作为函数的参数或者已知类型的变量或常量，你可以通过一个空的数组字面量创建一个空的集合：
+
+```swift
+letters.insert("a")
+// letters 现在含有1个 Character 类型的值
+letters = []
+// letters 现在是一个空的 Set，但是它依然是 Set<Character> 类型
+```
+
+### 
+
+```swift
+var favoriteGenres: Set<String> = ["Rock", "Classical", "Hip hop"]
+// favoriteGenres 被构造成含有三个初始值的集合
+```
+
+> `favoriteGenres` 被声明为一个变量（拥有 `var` 标示符）而不是一个常量（拥有 `let` 标示符）,因为它里面的元素将会在之后的例子中被增加或者移除。
+
+- 一个集合类型不能从数组字面量中被直接推断出来，因此 `Set` 类型必须显式声明
+
 ### 访问和修改一个集合
+
+- 取一个集合中元素的数量，可以使用其只读属性 `count`
+- 布尔属性 `isEmpty` 作为一个缩写形式去检查 `count` 属性是否为 `0`
+- `insert(_:)` 方法来添加一个新元素
+- `remove(_:)` 删除一个元素（删除它并且返回它的值）若该集合不包含它，则返回 `nil`
+- 通过 `removeAll()` 方法删除所有元素
+
+```swift
+if let removedGenre = favoriteGenres.remove("Rock") {
+    print("\(removedGenre)? I'm over it.")
+} else {
+    print("I never much cared for that.")
+}
+// 打印“Rock? I'm over it.”
+```
+
+- `contains(_:)` 方法去检查是否包含一个特定的值
+
+```swift
+if favoriteGenres.contains("Funk") {
+    print("I get up on the good foot.")
+} else {
+    print("It's too funky in here.")
+}
+// 打印“It's too funky in here.”
+```
+
 ### 遍历一个集合
+
+- `for-in` 循环中遍历
+
+```swift
+for genre in favoriteGenres {
+    print("\(genre)")
+}
+// Classical
+// Jazz
+// Hip hop
+```
+
+- 特定顺序来遍历一个集合中的值可以使用 `sorted()` 方法，它将返回一个有序数组，这个数组的元素排列顺序由操作符 `<` 对元素进行比较的结果来确定
+
+```swift
+for genre in favoriteGenres.sorted() {
+    print("\(genre)")
+}
+// Classical
+// Hip hop
+// Jazz
+```
+
 ## 集合操作
+
+- 把两个集合组合到一起
+- 判断两个集合共有元素
+- 判断两个集合是否全包含，部分包含或者不相交
+
 ### 基本集合操作
+
+- 以及通过阴影部分的区域显示两个集合 `a` 和 `b`各种操作的结果：
+
+![集合图解](https://docs.swift.org/swift-book/_images/setVennDiagram_2x.png)
+
+- 使用 `intersection(_:)` 方法根据两个集合的交集创建一个新的集合。// 交集
+- 使用 `symmetricDifference(_:)` 方法根据两个集合不相交的值创建一个新的集合。// 并集 - 交集
+- 使用 `union(_:)` 方法根据两个集合的所有值创建一个新的集合。// 并集
+- 使用 `subtracting(_:)` 方法根据不在另一个集合中的值创建一个新的集合。
+
+```swift
+let oddDigits: Set = [1, 3, 5, 7, 9]
+let evenDigits: Set = [0, 2, 4, 6, 8]
+let singleDigitPrimeNumbers: Set = [2, 3, 5, 7]
+
+oddDigits.union(evenDigits).sorted()
+// [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+oddDigits.intersection(evenDigits).sorted()
+// []
+oddDigits.subtracting(singleDigitPrimeNumbers).sorted()
+// [1, 9]
+oddDigits.symmetricDifference(singleDigitPrimeNumbers).sorted()
+// [1, 2, 9]
+```
+
 ### 集合成员关系和相等
+
+![img](https://docs.swift.org/swift-book/_images/setEulerDiagram_2x.png)
+
+- 运算符（`==`）来判断两个集合包含的值是否全部相同
+- `isSubset(of:)` 方法来判断一个集合中的所有值是否也被包含在另外一个集合中
+- 使用 `isSuperset(of:)` 方法来判断一个集合是否包含另一个集合中所有的值。
+- 使用 `isStrictSubset(of:)` 或者 `isStrictSuperset(of:)` 方法来判断一个集合是否是另外一个集合的子集合或者父集合并且两个集合并不相等。
+
+- 使用 `isDisjoint(with:)` 方法来判断两个集合是否不含有相同的值（是否没有交集）
+
+```swift
+let houseAnimals: Set = ["🐶", "🐱"]
+let farmAnimals: Set = ["🐮", "🐔", "🐑", "🐶", "🐱"]
+let cityAnimals: Set = ["🐦", "🐭"]
+
+houseAnimals.isSubset(of: farmAnimals)
+// true
+farmAnimals.isSuperset(of: houseAnimals)
+// true
+farmAnimals.isDisjoint(with: cityAnimals)
+// true
+```
+
 ## 字典
+
+- 无序的集合
+- 所有键的值需要是相同的类型
+- 所有值的类型也需要相同
+
+>  Swift 的 `Dictionary` 类型被桥接到 Foundation 的 `NSDictionary` 类。
+
+>  更多关于在 Foundation 和 Cocoa 中使用 `Dictionary` 类型的信息，参见 [Bridging Between Dictionary and NSDictionary](https://developer.apple.com/documentation/swift/dictionary#2846239)。
+
 ### 字典类型简化语法
+
+- 用 `Dictionary<Key, Value>` 定义
+- 简化可用 `[Key: Value]`
+
+> 字典的 `Key` 类型必须遵循 `Hashable` 协议，就像 `Set` 的值类型。
+
 ### 创建一个空字典
+
+```swift
+var namesOfIntegers = [Int: String]()
+// namesOfIntegers 是一个空的 [Int: String] 字典
+```
+
+- 如果上下文已经提供了类型信息，可以使用空字典字面量来创建一个空字典，记作 `[:]` （一对方括号中放一个冒号）
+
+```swift
+namesOfIntegers[16] = "sixteen"
+// namesOfIntegers 现在包含一个键值对
+namesOfIntegers = [:]
+// namesOfIntegers 又成为了一个 [Int: String] 类型的空字典
+```
+
 ### 用字典字面量创建字典
+
+```swift
+[key 1: value 1, key 2: value 2, key 3: value 3]
+```
+
+```swift
+var airports: [String: String] = ["YYZ": "Toronto Pearson", "DUB": "Dublin"]
+```
+
+- 键和值都有各自一致的类型，那么就不必写出字典的类型
+
+```swift
+var airports = ["YYZ": "Toronto Pearson", "DUB": "Dublin"]
+```
+
+- Swift 可以推断出 `[String: String]` 是 `airports` 字典的正确类型
+
 ### 访问和修改字典
+
+- 只读属性 `count`
+
+```swift
+print("The dictionary of airports contains \(airports.count) items.")
+// 打印“The dictionary of airports contains 2 items.”（这个字典有两个数据项）
+```
+
+- 布尔属性 `isEmpty` 作为一个缩写形式去检查 `count` 属性是否为 `0`
+
+```swift
+if airports.isEmpty {
+    print("The airports dictionary is empty.")
+} else {
+    print("The airports dictionary is not empty.")
+}
+// 打印“The airports dictionary is not empty.”
+```
+
+- 下标语法访问
+
+```swift
+airports["LHR"] = "London"
+// airports 字典现在有三个数据项
+```
+
+- 下标语法来改变特定键对应的值
+
+```swift
+airports["LHR"] = "London Heathrow"
+// “LHR”对应的值被改为“London Heathrow”
+```
+
+- `updateValue(_:forKey:)` 方法可以设置或者更新特定键对应的值（不存在对应值的时候会设置新值或者在存在时更新已存在的值）
+- 该方法返回更新值之前的*原值* 的可选类型。这样使得你可以检查更新是否成功。
+
+```swift
+if let oldValue = airports.updateValue("Dublin Airport", forKey: "DUB") {
+    print("The old value for DUB was \(oldValue).")
+}
+// 输出“The old value for DUB was Dublin.”
+```
+
+- 也可以使用下标语法
+- 如果这个字典包含请求键所对应的值，下标会返回一个包含这个存在值的可选类型，否则将返回 `nil`
+
+```swift
+if let airportName = airports["DUB"] {
+    print("The name of the airport is \(airportName).")
+} else {
+    print("That airport is not in the airports dictionary.")
+}
+// 打印“The name of the airport is Dublin Airport.”
+```
+
+- 可以使用下标语法通过将某个键的对应值赋值为 `nil` 来从字典里移除一个键值
+
+```
+airports["APL"] = "Apple Internation"
+// “Apple Internation”不是真的 APL 机场，删除它
+airports["APL"] = nil
+// APL 现在被移除了
+```
+
+- `removeValue(forKey:)` 方法也可以用来在字典中移除键值对
+- 在键值对存在的情况下会移除该键值对并且返回被移除的值
+- 在没有对应值的情况下返回 `nil`
+
+```swift
+if let removedValue = airports.removeValue(forKey: "DUB") {
+    print("The removed airport's name is \(removedValue).")
+} else {
+    print("The airports dictionary does not contain a value for DUB.")
+}
+// 打印“The removed airport's name is Dublin Airport.”
+```
+
 ### 字典遍历
 
+- 用 `for-in` 循环来遍历某个字典中的键值对
+
+```swift
+for (airportCode, airportName) in airports {
+    print("\(airportCode): \(airportName)")
+}
+// YYZ: Toronto Pearson
+// LHR: London Heathrow
+```
+
+- 访问 `keys` 或者 `values` 属性，你也可以遍历字典的键或者值
+
+```swift
+for airportCode in airports.keys {
+    print("Airport code: \(airportCode)")
+}
+// Airport code: YYZ
+// Airport code: LHR
+
+
+for airportName in airports.values {
+    print("Airport name: \(airportName)")
+}
+// Airport name: Toronto Pearson
+// Airport name: London Heathrow
+```
+
+- 用某个字典的键集合或者值集合来作为某个接受 `Array` 实例的 API 的参数
+
+- 可以直接使用 `keys` 或者 `values` 属性构造一个新数组
+
+  ```swift
+  let airportCodes = [String](airports.keys)
+  // airportCodes 是 ["YYZ", "LHR"]
+  
+  
+  let airportNames = [String](airports.values)
+  // airportNames 是 ["Toronto Pearson", "London Heathrow"]
+  ```
+
+- 可以对字典的 `keys` 或 `values` 属性使用 `sorted()` 方法
+
 # 控制流
+
 ## For-In 循环
 ## While 循环
 ### While
