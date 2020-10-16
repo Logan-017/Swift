@@ -2551,31 +2551,439 @@ if #available(平台名称 版本号, ..., *) {
 
 # 函数
 
-
+- *函数*是一段完成特定任务的独立**代码片段**
+- Swift 函数语法非常的灵活
+- 没有参数名字的 C 风格函数，到复杂的带局部和外部参数名的 Objective-C 风格函数
+- 参数可以提供默认值，以简化函数调用
+- 参数也可以既当做传入参数，也当做传出参数，一旦函数执行结束，传入的参数值将被修改。
+- 函数类型=参数类型 + 返回值类型
+- 函数类型当做任何其他普通变量类型一样处理，把函数当做别的函数的参数，也可以从其他函数中返回函数
+- 函数的定义可以写在其他函数定义中，这样可以在嵌套函数内实现功能封装
 
 ## 函数的定义与调用
+
+```swift
+func greet(person: String) -> String {
+    let greeting = "Hello, " + person + "!"
+    return greeting
+}
+
+print(greet(person: "Anna"))
+// 打印“Hello, Anna!”
+print(greet(person: "Brian"))
+// 打印“Hello, Brian!”
+```
+
+> `print(_:separator:terminator:)` 函数的第一个参数并没有设置一个标签，而其他的参数因为已经有了默认值，因此是可选的
+
+- 简化这个函数的定义，可以将问候消息的创建和返回写成一句
+
+```swift
+func greetAgain(person: String) -> String {
+    return "Hello again, " + person + "!"
+}
+print(greetAgain(person: "Anna"))
+// 打印“Hello again, Anna!”
+```
+
 ## 函数参数与返回值
+
 ### 无参数函数
+
+```swift
+func sayHelloWorld() -> String {
+    return "hello, world"
+}
+print(sayHelloWorld())
+// 打印“hello, world”
+```
+
+- 无参数，但圆括号必须写
+- 调用时，函数名 + 圆括号
+
 ### 多参数函数
+
+- 参数被包含在函数的括号之中，以逗号分隔
+
+```swift
+func greet(person: String, alreadyGreeted: Bool) -> String {
+    if alreadyGreeted {
+        return greetAgain(person: person)
+    } else {
+        return greet(person: person)
+    }
+}
+print(greet(person: "Tim", alreadyGreeted: true))
+// 打印“Hello again, Tim!”
+```
+
+- 虽然它们都有着同样的名字 `greet`，但是 `greet(person:alreadyGreeted:)` 函数需要两个参数，而 `greet(person:)` 只需要一个参数
+
 ### 无返回值函数
+
+- 中没有返回箭头（->）和返回类型
+
+```swift
+func greet(person: String) {
+    print("Hello, \(person)!")
+}
+greet(person: "Dave")
+// 打印“Hello, Dave!”
+```
+
+> 严格地说，即使没有明确定义返回值，该 `greet(Person：)` 函数仍然返回一个值。没有明确定义返回类型的函数的返回一个 `Void` 类型特殊值，该值为一个空元组，写成 ()
+
+- 调用函数时，可以忽略该函数的返回值：
+
+```swift
+func printAndCount(string: String) -> Int {
+    print(string)
+    return string.count
+}
+func printWithoutCounting(string: String) {
+    let _ = printAndCount(string: string)
+}
+printAndCount(string: "hello, world")
+// 打印“hello, world”，并且返回值 12
+printWithoutCounting(string: "hello, world")
+// 打印“hello, world”，但是没有返回任何值
+```
+
 ### 多重返回值函数
+
+- 用元组（tuple）类型让多个值作为一个复合值从函数中返回
+
+- 在一个 `Int` 类型的数组中找出最小值与最大值
+
+```swift
+func minMax(array: [Int]) -> (min: Int, max: Int) {
+    var currentMin = array[0]
+    var currentMax = array[0]
+    for value in array[1..<array.count] {
+        if value < currentMin {
+            currentMin = value
+        } else if value > currentMax {
+            currentMax = value
+        }
+    }
+    return (currentMin, currentMax)
+}
+```
+
+- 因元组的成员值已被命名，可通过 `.` 语法来检索
+
+```swift
+let bounds = minMax(array: [8, -6, 2, 109, 3, 71])
+print("min is \(bounds.min) and max is \(bounds.max)")
+// 打印“min is -6 and max is 109”
+```
+
 ### 可选元组返回类型
+
+- 在元组类型的右括号后放置一个问号来定义一个可选元组
+- 如 `(Int, Int)?` 或 `(String, Int, Bool)?`
+
+> 可选元组类型如 `(Int, Int)?` 与元组包含可选类型如 `(Int?, Int?)` 是不同的。可选的元组类型，整个元组是可选的，而不只是元组中的每个元素值
+
+- 函数不会对传入的数组执行任何安全检查，如果 `array` 参数是一个空数组，如上定义的 `minMax(array:)` 在试图访问 `array[0]` 时会触发一个运行时错误
+- 为了安全地处理这个“空数组”问题，将 `minMax(array:)` 函数改写为使用可选元组返回类型，并且当数组为空时返回 `nil`
+
+```swift
+func minMax(array: [Int]) -> (min: Int, max: Int)? {
+    if array.isEmpty { return nil }// 
+    var currentMin = array[0]
+    var currentMax = array[0]
+    for value in array[1..<array.count] {
+        if value < currentMin {
+            currentMin = value
+        } else if value > currentMax {
+            currentMax = value
+        }
+    }
+    return (currentMin, currentMax)
+}
+```
+
 ### 隐式返回的函数
+
+- 整个函数体 = 单行表达式 = （隐式）返回表达式
+
+  ```swift
+  func greeting(for person: String) -> String {
+      "Hello, " + person + "!"
+  }
+  print(greeting(for: "Dave"))
+  // 打印 "Hello, Dave!"
+  
+  
+  func anotherGreeting(for person: String) -> String {
+      return "Hello, " + person + "!"
+  }
+  print(anotherGreeting(for: "Dave"))
+  // 打印 "Hello, Dave!"
+  ```
+
+- 正如你将会在 [简略的 Getter 声明]() 里看到的， 一个属性的 getter 也可以使用隐式返回的形式。
+
 ## 函数参数标签和参数名称
+
+- 每个函数参数都有一个*参数标签（argument label）*以及一个*参数名称（parameter name）*
+- 参数标签--在调用函数的时候使用(针对外部)
+- 参数名称--在函数的实现中使用（针对内部）
+
+- 默认情况：参数标签 = 参数名称
+
+```swift
+func someFunction(firstParameterName: Int, secondParameterName: Int) {
+    // 在函数体内，firstParameterName 和 secondParameterName 代表参数中的第一个和第二个参数值
+}
+someFunction(firstParameterName: 1, secondParameterName: 2)
+```
+
+- 参数标签名称可相同，但建议保持唯一性，保证代码可读性
+
 ### 指定参数标签
+
+- 在参数名称前指定它的参数标签，中间以空格分隔
+
+```swift
+func someFunction(argumentLabel parameterName: Int) {
+    // 在函数体内，parameterName 代表参数值
+}
+```
+
+- 参数标签增加代码可读性
+
 ### 忽略参数标签
+
+- 想调用的时候没标签，可用下划线（`_`）代替参数标签
+
+```swift
+func someFunction(_ firstParameterName: Int, secondParameterName: Int) {
+     // 在函数体内，firstParameterName 和 secondParameterName 代表参数中的第一个和第二个参数值
+}
+someFunction(1, secondParameterName: 2)
+```
+
+- 若参数有标签，调用的时必须用标签
+
 ### 默认参数值
-### 可变参数
+
+- 定义*默认值（Deafult Value）*：通过给参数赋值
+- 调用函数时，可忽略该参数
+
+```swift
+func someFunction(parameterWithoutDefault: Int, parameterWithDefault: Int = 12) {
+    // 如果你在调用时候不传第二个参数，parameterWithDefault 会值为 12 传入到函数体中。
+}
+someFunction(parameterWithoutDefault: 3, parameterWithDefault: 6) // parameterWithDefault = 6
+someFunction(parameterWithoutDefault: 4) // parameterWithDefault = 12
+```
+
+- 官方建议：没默认值的参数放最前（保证代码清晰可读，如同名函数重载）
+
+### 可变（个数）参数
+
+- 一个*可变参数（variadic parameter）*可以接受零个或多个值
+- 在变量类型名后面加入（`...`）
+- 函数体内，当作该类型的一个数组使用
+
+- 计算一组任意长度数字的 *算术平均数（arithmetic mean)*：
+
+```swift
+func arithmeticMean(_ numbers: Double...) -> Double {
+    var total: Double = 0
+    for number in numbers {
+        total += number
+    }
+    return total / Double(numbers.count)
+}
+arithmeticMean(1, 2, 3, 4, 5)
+// 返回 3.0, 是这 5 个数的平均数。
+arithmeticMean(3, 8.25, 18.75)
+// 返回 10.0, 是这 3 个数的平均数。
+```
+
+> 一个函数最多只能拥有一个可变参数。
+
 ### 输入输出参数
 
+- 函数参数默认是常量**let**，函数体中更改参数值会编译错误
+- 想要在函数体修改参数的值，并想在修改在函数调用结束后仍然存在，把这个参数定义为*输入输出参数（In-Out Parameters）*（一个 `输入输出参数`有传入函数的值，这个值被函数修改，然后被传出函数，替换原来的值）
+- 参数定义前加 `inout` 关键字
+- 只能传递变量，不能传入常量或者字面量
+- 在参数名前加 `&` 符，表示这个值可以被函数修改
+
+> 输入输出参数不能有默认值，而且可变参数不能用 `inout` 标记
+
+
+
+- `swapTwoInts(_:_:)` 函数有两个分别叫做 `a` 和 `b` 的输入输出参数
+
+```swift
+func swapTwoInts(_ a: inout Int, _ b: inout Int) {
+    let temporaryA = a
+    a = b
+    b = temporaryA
+}
+```
+
+```swift
+var someInt = 3
+var anotherInt = 107
+swapTwoInts(&someInt, &anotherInt)
+print("someInt is now \(someInt), and anotherInt is now \(anotherInt)")
+// 打印“someInt is now 107, and anotherInt is now 3”
+```
+
 ## 函数类型
+
+- 函数类型 = 参数类型 + 返回值类型
+
+```swift
+func addTwoInts(_ a: Int, _ b: Int) -> Int {
+    return a + b
+}
+func multiplyTwoInts(_ a: Int, _ b: Int) -> Int {
+    return a * b
+}
+```
+
+- 两个函数的类型是 `(Int, Int) -> Int`
+- 解读为: “这个函数类型有两个 `Int` 型的参数并返回一个 `Int` 型的值”
+
+```swift
+func printHelloWorld() {
+    print("hello, world")
+}
+```
+
+- 类型是：`() -> Void`，或者叫“没有参数，并返回 `Void` 类型的函数”。
+
 ### 使用函数类型
+
+- 定义一个类型为函数的常量或变量，并将适当的函数赋值给它
+
+```swift
+var mathFunction: (Int, Int) -> Int = addTwoInts
+```
+
+- 解读为：
+
+  ”定义一个叫做 `mathFunction` 的变量，类型是‘一个有两个 `Int` 型的参数并返回一个 `Int` 型的值的函数’，并让这个新变量指向 `addTwoInts` 函数”
+
+- `addTwoInts` 和 `mathFunction` 有同样的类型， Swift 类型检查（type-check）通过
+
+- 变量调用
+
+```swift
+print("Result: \(mathFunction(2, 3))")
+// Prints "Result: 5"
+```
+
+- 同类型函数可赋值给同一个变量
+
+```swift
+mathFunction = multiplyTwoInts
+print("Result: \(mathFunction(2, 3))")
+// Prints "Result: 6"
+```
+
+- 可以让 Swift 来推断其函数类型
+
+```swift
+let anotherMathFunction = addTwoInts
+// anotherMathFunction 被推断为 (Int, Int) -> Int 类型
+```
+
 ### 函数类型作为参数类型
+
+- 用 `(Int, Int) -> Int` 这样的函数类型作为另一个函数的参数类型
+
+- 使用场景：将函数的一部分实现留给函数的调用者来提供
+
+- 同样是输出某种数学运算结果
+
+```swift
+func printMathResult(_ mathFunction: (Int, Int) -> Int, _ a: Int, _ b: Int) {
+    print("Result: \(mathFunction(a, b))")
+}
+printMathResult(addTwoInts, 3, 5)
+// 打印“Result: 8”
+```
+
 ### 函数类型作为返回类型
+
+```swift
+func stepForward(_ input: Int) -> Int {
+    return input + 1
+}
+func stepBackward(_ input: Int) -> Int {
+    return input - 1
+}
+```
+
+```swift
+func chooseStepFunction(backward: Bool) -> (Int) -> Int {
+    return backward ? stepBackward : stepForward
+}
+```
+
+```swift
+var currentValue = 3
+let moveNearerToZero = chooseStepFunction(backward: currentValue > 0)
+// moveNearerToZero 现在指向 stepBackward() 函数。
+```
+
+```swift
+print("Counting to zero:")
+// Counting to zero:
+while currentValue != 0 {
+    print("\(currentValue)... ")
+    currentValue = moveNearerToZero(currentValue)
+}
+print("zero!")
+// 3...
+// 2...
+// 1...
+// zero!
+```
 
 ## 嵌套函数
 
+- 目前为止所有函数都叫*全局函数（global functions）*
+- 把函数定义在别的函数体中，称作 *嵌套函数（nested functions）*
+  - 默认情况下，嵌套函数是对外界不可见的
+  - 但可被它的外围函数（enclosing function）调用
+  - 一个外围函数也可返回它的某一个嵌套函数，使得这个函数可以在其他域中被使用
+
+- 用返回嵌套函数的方式重写 `chooseStepFunction(backward:)` 函数
+
+```swift
+func chooseStepFunction(backward: Bool) -> (Int) -> Int {
+    func stepForward(input: Int) -> Int { return input + 1 }
+    func stepBackward(input: Int) -> Int { return input - 1 }
+    return backward ? stepBackward : stepForward
+}
+var currentValue = -4
+let moveNearerToZero = chooseStepFunction(backward: currentValue > 0)
+// moveNearerToZero now refers to the nested stepForward() function
+while currentValue != 0 {
+    print("\(currentValue)... ")
+    currentValue = moveNearerToZero(currentValue)
+}
+print("zero!")
+// -4...
+// -3...
+// -2...
+// -1...
+// zero!
+```
+
 # 闭包
+
+
+
 ## 闭包表达式
 ### 排序方法
 ### 闭包表达式语法
