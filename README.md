@@ -3385,19 +3385,330 @@ for customerProvider in customerProviders {
 - 空合并运算符 ?? 使用了 @autoclosure 技术
 - 有@autoclosure、无@autoclosure，构成了函数重载
 
-# 枚举
+# 枚举 - Enumerations
 
 ## 枚举语法
-## 使用 Switch 语句匹配枚举值
-## 枚举成员的遍历
-## 关联值
-## 原始值
-### 原始值的隐式赋值
-### 使用原始值初始化枚举实例
 
-## 递归枚举
+- 使用 `enum` 关键词来创建枚举
+
+```swift
+enum SomeEnumeration {
+    // 枚举定义放在这里
+}
+```
+
+- 指南针四个方向
+
+```swift
+enum CompassPoint {
+    case north
+    case south
+    case east
+    case west
+}
+```
+
+> 与 C 和 Objective-C 不同，`north`，`south`，`east` 和 `west` 不会被隐式地赋值为 `0`，`1`，`2` 和 `3`。
+>
+> 每个成员都被定义为的 `CompassPoint` 类型
+
+- 省空间写法：多个 case 写在同一行，逗号隔开
+
+```swift
+enum Planet {
+    case mercury, venus, earth, mars, jupiter, saturn, uranus, neptune
+}
+```
+
+- 定义一个新枚举 = 定义一个新类型，建议命名为单数，而不是复数（例如 `CompassPoint` 和 `Planet`），并以答谢字母开头
+
+
+
+- 类型不确定时，要写枚举类型名：
+
+```swift
+var directionToHead = CompassPoint.west
+```
+
+- 类型确定时 / 可以被推断出来时，可用点语法（省略枚举类型名）：
+
+```swift
+directionToHead = .east
+```
+
+## 使用 Switch 语句匹配枚举值
+
+- 匹配每个 case
+
+```swift
+directionToHead = .south
+switch directionToHead {
+case .north:
+    print("Lots of planets have a north")
+case .south:
+    print("Watch out for penguins")
+case .east:
+    print("Where the sun rises")
+case .west:
+    print("Where the skies are blue")
+}
+// 打印“Watch out for penguins”
+```
+
+- `switch` 语句，要么覆盖所有 case ，要么使用default:
+
+```swift
+let somePlanet = Planet.earth
+switch somePlanet {
+case .earth:
+    print("Mostly harmless")
+default:
+    print("Not a safe place for humans")
+}
+// 打印“Mostly harmless”
+```
+
+## 枚举成员的遍历
+
+- 必须遵循 `CaseIterable` 协议，枚举类型，会生成一个 `allCases` 属性（一个包含枚举所有成员的集合，元素类型为枚举类型）：
+
+  ```swift
+  enum Beverage: CaseIterable {
+      case coffee, tea, juice
+  }
+  let numberOfChoices = Beverage.allCases.count
+  print("\(numberOfChoices) beverages available")
+  // 打印“3 beverages available”
+  ```
+
+- 用 `for` 循环来遍历所有枚举成员
+
+```swift
+for beverage in Beverage.allCases {
+    print(beverage)
+}
+// coffee
+// tea
+// juice
+```
+
+## 关联值 - （外部赋值）
+
+- 关联值枚举成员，存储额外信息（可以是任意类型）
+
+> 关联值 跟其他语言中的可识别联合（discriminated unions），标签联合（tagged unions），或者变体（variants）相似
+
+- 条形码种类
+  - UPC 格：`0` 到 `9` 的数字
+  - QR 码格式的二维码：任何 ISO 8859-1 字符，并且编码最长有 2953 个字符的字符串
+
+![img](https://docs.swift.org/swift-book/_images/barcode_UPC_2x.png)
+
+![img](https://docs.swift.org/swift-book/_images/barcode_QR_2x.png)
+
+```swift
+enum Barcode {
+    case upc(Int, Int, Int, Int)
+    case qrCode(String)
+}
+```
+
+- 创建条形码
+
+```swift
+var productBarcode = Barcode.upc(8, 85909, 51226, 3)
+// 关联的元组值为 (8, 85909, 51226, 3)
+```
+
+- 同一个商品，可以被分配一个不同类型的条形码，例如：
+
+```swift
+productBarcode = .qrCode("ABCDEFGHIJKLMNOP")
+```
+
+- 只能存储一个，旧值会被新值覆盖
+
+
+
+- 用常量或变量赋值提取关联值
+
+```swift
+switch productBarcode {
+case .upc(let numberSystem, let manufacturer, let product, let check):
+    print("UPC: \(numberSystem), \(manufacturer), \(product), \(check).")
+case .qrCode(let productCode):
+    print("QR code: \(productCode).")
+}
+// 打印“QR code: ABCDEFGHIJKLMNOP.”
+```
+
+- 提取所有关联值，简洁写法
+
+```swift
+switch productBarcode {
+case let .upc(numberSystem, manufacturer, product, check):
+    print("UPC: \(numberSystem), \(manufacturer), \(product), \(check).")
+case let .qrCode(productCode):
+    print("QR code: \(productCode).")
+}
+// 打印“QR code: ABCDEFGHIJKLMNOP.”
+```
+
+## 原始值 - Raw Values - (内部赋值)
+
+- 相当于 C 和 OC 的默认值
+- 作为关联值的另一种选择，可以使用原始值
+- 每个枚举成员的默认值，类型必须相同（定义时，必须继承某一种数据类型）
+
+
+
+- 枚举成员一起存储的原始 ASCII 码
+
+```swift
+// 原始值被定义为类型 Character
+enum ASCIIControlCharacter: Character {
+    case tab = "\t"
+    case lineFeed = "\n"
+    case carriageReturn = "\r"
+}
+```
+
+> 与关联值的区别：
+>
+> 原始值内部赋值一次，不会改变。关联值，外部随时赋值，随时改变
+
+### 原始值的隐式赋值 - 自动默认值
+
+- 原始值为整型 / 字符串类型 ，Swift自动分配默认的原始值
+
+
+
+- 整型原始值：隐式赋值为依次递增 `1`。（第一个枚举成员没有被手动赋值，原始值将为 `0`。）
+
+- 利用整型的原始值来表示每个行星在太阳系中的顺序
+
+```swift
+// 整型原始值, 如果不手动设置,第一个默认为0, 后面一次递增1
+enum Planet: Int, CaseIterable {
+    case mercury = 1,  venus, earth, mars, jupiter, saturn, uranus, neptune
+}
+
+for planetNum in Planet.allCases {
+    print("planetNum = \(planetNum.rawValue)")
+    print("--------------------")
+}
+```
+
+
+
+- 字符串类型原始值：隐式原始值 = 枚举成员名称
+
+```swift
+enum CompassPoint: String, CaseIterable {
+    case north, south, east, west
+}
+
+for point in CompassPoint.allCases {
+    print("point = \(point.rawValue)")
+    print("--------------------")
+}
+```
+
+- 访问原始值：使用枚举成员的 `rawValue` 属性
+
+### 使用原始值初始化枚举实例 - 外部赋值
+
+- 用原始值类型来定义一个枚举，枚举自动获得一个初始化方法
+- 原始值初始化器：接收一个 `rawValue` 的参数，类型即为原始值类型，返回值为枚举成员或 `nil`。
+
+
+
+- 用原始值 `7` 创建了枚举成员 `Uranus`
+
+```swift
+let possiblePlanet = Planet(rawValue: 7)
+// possiblePlanet 类型为 Planet? 值为 Planet.uranus
+```
+
+- 不一定创建成功，上面的例子中，`possiblePlanet` 是 `Planet?` 类型，或者说“可选的 `Planet`”。
+
+> 原始值构造器是一个可失败构造器，因为并不是每一个原始值都有与之对应的枚举成员。更多信息请参见 [可失败构造器]()。
+
+- 试图寻找一个位置为 `11` 的行星，通过原始值构造器返回的可选 `Planet` 值将是 `nil`：
+
+```swift
+let positionToFind = 11
+if let somePlanet = Planet(rawValue: positionToFind) { // 可选绑定（optional binding）
+    switch somePlanet {
+    case .earth:
+        print("Mostly harmless")
+    default:
+        print("Not a safe place for humans")
+    }
+} else {
+    print("There isn't a planet at position \(positionToFind)")
+}
+// 打印“There isn't a planet at position 11”
+```
+
+## 递归枚举 
+
+- 关联值类型为自身
+- 例子：定义枚举类型，可以存储三种算术表达式，纯数字、两个表达式相加、两个表达式相乘
+- 编译器操作递归枚举时，必须插入间接寻址层
+  - 部分需要使用递归的枚举成员：前面加上 `indirect`关键字
+  - 所有成员使用递归：在枚举类型开头加上 `indirect` 关键字
+
+```swift
+enum ArithmeticExpression {
+    case number(Int)
+    indirect case addition(ArithmeticExpression, ArithmeticExpression)
+    indirect case multiplication(ArithmeticExpression, ArithmeticExpression)
+}
+```
+
+- 枚举类型开头加上关键字 `indirect` = 所有成员可递归
+
+```swift
+indirect enum ArithmeticExpression {
+    case number(Int)
+    case addition(ArithmeticExpression, ArithmeticExpression)
+    case multiplication(ArithmeticExpression, ArithmeticExpression)
+}
+```
+
+- 创建表达式 `(5 + 4) * 2`
+
+```swift
+let five = ArithmeticExpression.number(5)
+let four = ArithmeticExpression.number(4)
+let sum = ArithmeticExpression.addition(five, four)
+let product = ArithmeticExpression.multiplication(sum, ArithmeticExpression.number(2))
+```
+
+- 对算术表达式求值的函数：
+
+```swift
+func evaluate(_ expression: ArithmeticExpression) -> Int {
+    switch expression {
+    case let .number(value):
+        return value
+    case let .addition(left, right):
+        return evaluate(left) + evaluate(right)
+    case let .multiplication(left, right):
+        return evaluate(left) * evaluate(right)
+    }
+}
+print(evaluate(product))
+// 打印“18”
+```
 
 # 类和结构体
+
+- 
+
+
+
 ## 结构体和类对比
 ### 类型定义的语法
 ### 结构体和类的实例
