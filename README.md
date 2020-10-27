@@ -3705,22 +3705,217 @@ print(evaluate(product))
 
 # 类和结构体
 
-- 
+- Swift创建类和结构体时，不需要将声明文件和实现文件分开
 
-
+> 一个*类*的实例通常被称为*对象。*
 
 ## 结构体和类对比
+
+- 共同点
+  - 都有 存储属性
+  - 都有函数 / 方法
+  - 都有 下标语法
+  - 都有 构造器 / 初始化器
+  - 都有 拓展 
+  - 都有 协议
+- 不同点-类多出的功能：
+  - 类允许继承，结构体不可继承
+  - 类创建的实例，可以在运行时检查、推断类型，结构体只在编译时检查
+  - 类有析构器 / 反初始化器，结构体没有
+  - 类有引用计数，结构体没有
+
+- 类比结构体的功能多，也更复杂，建议优先使用结构体
+- 意味着你的大多数自定义数据类型都会是结构体和枚举。更多详细的比较参见 [在结构和类之间进行选择](https://developer.apple.com/documentation/swift/choosing_between_structures_and_classes)。
+
 ### 类型定义的语法
+
+- 类与结构体有相似定义语法
+  - 使用关键词 class来定义类
+  - 使用struct来定义结构体
+
+```swift
+struct SomeStructure {
+    // 在这里定义结构体
+}
+class SomeClass {
+    // 在这里定义类
+}
+```
+
+> 定义了一个新的类或者结构体：用UpperCamelCase 命名法命名 (比如这里我们说到的 SomeClass和 SomeStructure)以符合 Swift 的字母大写风格（比如说 String ， Int 以及 Bool）
+>
+> 属性和方法使用lowerCamelCase命名法[[1\]](https://www.cnswift.org/classes-and-structures#spl-12) (比如 frameRate 和 incrementCount)，以此来区别于类型名称
+
+> CamelCase names ：在给储存器或者函数命名时我们习惯上把多个有意义的单词以开头大写的形式拼接在一起组成一个单一的长单词。这种方法被称为“*驼峰式命名法*”，又分为开头大写和开头小写两种。比如说 SomeClass 、 frameRate `等。`
+
+- 例子
+
+```swift
+struct Resolution {
+    var width = 0
+    var height = 0
+  // 两个属性被初始化为整数 0 的时候，它们会被推断为 Int 类型
+}
+class VideoMode {
+    var resolution = Resolution()
+    var interlaced = false
+    var frameRate = 0.0
+    var name: String?
+  //  name 是一个可选类型，它会被自动赋予一个默认值 nil，意为“没有 name 值”
+}
+```
+
 ### 结构体和类的实例
+
+- 创建结构体和类实例，语法相似
+
+```swift
+let someResolution = Resolution()
+let someVideoMode = VideoMode()
+```
+
+- 构造器语法
+  - 类型名称后跟随一对空括号
+  - 属性均会被初始化为默认值
+
 ### 属性访问
-### 结构体类型的成员逐一构造器
+
+- 点语法：实例名后面紧跟属性名，两者以点号（`.`）分隔，不带空格
+
+```swift
+print("The width of someResolution is \(someResolution.width)")
+// 打印 "The width of someResolution is 0"
+```
+
+- 访问子属性，如 `VideoMode` 中 `resolution` 属性的 `width` 属性
+
+```swift
+print("The width of someVideoMode is \(someVideoMode.resolution.width)")
+// 打印 "The width of someVideoMode is 0"
+```
+
+- 使用点语法为可变属性赋值：
+
+```swift
+someVideoMode.resolution.width = 1280
+print("The width of someVideoMode is now \(someVideoMode.resolution.width)")
+// 打印 "The width of someVideoMode is now 1280"
+```
+
+### 结构体类型的成员 初始化器 / 构造器
+
+- Swift的结构体，会自动生成一个成员初始化器
+- 新创建实例的初始化值，通过属性名称传递到成员初始化器中
+
+```swift
+let vga = Resolution(width: 640, height: 480)
+```
 
 ## 结构体和枚举是值类型
+
+- 值类型：赋值给变量、常量、传递给函数时，值只会被拷贝
+- 所有的基本类型（底层也是使用结构体实现的）：
+  - 整数（integer）
+  - 浮点数（floating-point number）
+  - 布尔值（boolean）
+  - 字符串（string)
+  - 数组（array）
+  - 字典（dictionary）
+- 枚举也是值类型
+- 实例中值类型的属性，代码传递时，都会被复制
+
+> - Copy On Write技术
+>   - Swift对系统自带的集合类型，进行了优化，新集合不会立即复制，跟原集合共享同一份内存。
+>
+>   - 只有集合的副本要被修改时，才会复制原集合的元素
+
+
+
+- 例子
+
+```swift
+let hd = Resolution(width: 1920, height: 1080)
+var cinema = hd
+```
+
+- 因为 `Resolution` 是结构体，所以会创建一个现有实例的副本，然后将副本赋值给 `cinema` 。
+- 修改为稍微宽一点的 2K 标准：
+
+```swift
+cinema.width = 2048
+print("cinema is now  \(cinema.width) pixels wide")
+// 打印 "cinema is now 2048 pixels wide"
+```
+
+- 初始的 `hd` 实例中 `width` 属性还是 `1920`：
+
+```swift
+print("hd is still \(hd.width) pixels wide")
+// 打印 "hd is still 1920 pixels wide"
+```
+
+![img](https://docs.swift.org/swift-book/_images/sharedStateStruct_2x.png)
+
+
+
+- 枚举也遵循相同的行为准则
+
 ## 类是引用类型
+
+- 引用类型：赋值到一个常量，变量或者本身被传递到一个函数时，只引用，不拷贝
+
+- 使用了之前定义的 `VideoMode` 类：
+
+```swift
+let tenEighty = VideoMode()
+tenEighty.resolution = hd
+tenEighty.interlaced = true
+tenEighty.name = "1080i"
+tenEighty.frameRate = 25.0
+```
+
+- 将 `tenEighty` 赋值给一个名为 `alsoTenEighty` 的新常量，并修改 `alsoTenEighty` 的帧率：
+
+```swift
+let alsoTenEighty = tenEighty
+alsoTenEighty.frameRate = 30.0
+```
+
+- 类是引用类型，所以 `tenEight` 和 `alsoTenEight` 实际上引用的是同一个 `VideoMode` 实例。换句话说，它们是同一个实例的两种叫法
+
+![img](https://docs.swift.org/swift-book/_images/sharedStateClass_2x.png)
+
+- 两个实例虽然都是常量，但不存储 `VideoMode` 实例，只存储它的引用 / 指针，改变的是实例的属性，属性是变量
+
 ### 恒等运算符
+
+- 恒等预算符：判断两 **类创建的实例** 是否是引用同一个
+  - 相同（`===`）// Identical to
+  - 不相同（`!==`）// Not identical to
+
+```swift
+if tenEighty === alsoTenEighty {
+    print("tenEighty and alsoTenEighty refer to the same VideoMode instance.")
+}
+// 打印 "tenEighty and alsoTenEighty refer to the same VideoMode instance."
+```
+
+- 判断引用类型：是否引用同一个实例，用 **===**
+- 判断值类型：是否相等，用 **==**
+
+
+
+- 在章节 **等价操作符** 中将会详细介绍实现自定义 == 和 != 运算符的流程
+
 ### 指针
 
+- 和 C，C++ 或者 Objective-C 语言不同，Swift指针不使用星号（`*`），跟普通常量、变量一样即可
+- 需要操作指针，用标准库提供的指针和缓冲区类型 —— 参见章节 **手动管理内存**
+
 # 属性
+
+
+
 ## 存储属性
 ### 常量结构体实例的存储属性
 ### 延时加载存储属性
