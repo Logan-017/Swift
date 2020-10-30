@@ -3900,8 +3900,8 @@ if tenEighty === alsoTenEighty {
 // 打印 "tenEighty and alsoTenEighty refer to the same VideoMode instance."
 ```
 
-- 判断引用类型：是否引用同一个实例，用 **===**
-- 判断值类型：是否相等，用 **==**
+- 判断引用类型：指针地址是否相等，用 **===**
+- 判断值类型：数值是否相等，用 **==**
 
 
 
@@ -3912,34 +3912,641 @@ if tenEighty === alsoTenEighty {
 - 和 C，C++ 或者 Objective-C 语言不同，Swift指针不使用星号（`*`），跟普通常量、变量一样即可
 - 需要操作指针，用标准库提供的指针和缓冲区类型 —— 参见章节 **手动管理内存**
 
-# 属性
+## 类和结构体之间的选择
+
+- 结构体-使用场景：
+  - 只封装简单数据
+  - 传递数据时，只需要数据值，而不是引用
+  - 数据的属性也是值类型，值需要拷贝，不需要引用
+  - 不需要继承
+- 结构体-使用例子：
+  - 几何形状大小，width属性和 height属性，两者都为 double类
+  - 路径，封装了一个 start属性和 length属性，两者为 Int类型
+  - 三维坐标系，封装了 x , y 和 z属性，他们都是 double类型
+
+## 字符串，数组和字典的赋值与拷贝行为
+
+- 基础库中的 NSString, NSArray和 NSDictionary，实例引用
+- Swift 的 String , Array 和 Dictionary类型是作为结构体来实现，传递拷贝
+
+# 属性 - Properties
 
 
 
-## 存储属性
+## 存储属性 - Stored Properties
+
+- 相当于 OC 的下划线成员变量
+
+- 适用于：结构体 、 类
+- 类型：常量 、变量
+- 可以有 默认值（参考 默认构造器 一节）
+- 构造 / 初始化 时，修改 存储属性，可修改常量存储属性（参考 构造过程中常量属性的修改 一节）
+
+
+
+- 存储属性必须初始化：
+  - 初始化器赋初值
+  - 直接赋默认值
+
+- 结构体使用 存储属性
+
+```swift
+struct FixedLengthRange {
+    var firstValue: Int
+    let length: Int
+}
+var rangeOfThreeItems = FixedLengthRange(firstValue: 0, length: 3)
+// 该区间表示整数 0，1，2
+rangeOfThreeItems.firstValue = 6
+// 该区间现在表示整数 6，7，8
+```
+
+- `length` 在创建实例的时候被初始化，且之后无法修改它的值，因为它是一个常量存储属性
+
 ### 常量结构体实例的存储属性
-### 延时加载存储属性
+
+- 因结构体为值类型，声明为常量的结构体实例，无法修改属性（即使声明的是变量属性）(引用类型，可以修改)
+
+```swift
+struct FixedLengthRange {
+    var firstValue: Int
+    let length: Int
+}
+var rangeOfThreeItems = FixedLengthRange(firstValue: 0, length: 3)
+// 该区间表示整数 0，1，2
+rangeOfThreeItems.firstValue = 6
+// 该区间现在表示整数 6，7，8
+```
+
+### 延时加载/延迟/懒加载 存储属性
+
+- 场景：将耗时加载的数据，延时加载
+
+- 使用时，才会调用初始化方法 init()
+- 声明前标注lazy 修饰语来表示一个延迟存储属性
+
+> lazy修饰的属性，必须为变量。
+>
+> 
+>
+> 因为常量属性，必须在实例初始化完成之前有初始值。
+
+```swift
+class DataImporter {
+    /*
+    DataImporter 是一个负责将外部文件中的数据导入的类。
+    这个类的初始化会消耗不少时间。
+    */
+    var fileName = "data.txt"
+    // 这里会提供数据导入功能
+}
+
+class DataManager {
+    lazy var importer = DataImporter()
+    var data = [String]()
+    // 这里会提供数据管理功能
+}
+
+let manager = DataManager()
+manager.data.append("Some data")
+manager.data.append("Some more data")
+// DataImporter 实例的 importer 属性还没有被创建
+```
+
+> lazy 属性没初始化，被多个线程访问，可能会初始化多次
+
 ### 存储属性和实例变量
 
-## 计算属性
+- OC
+  - 读写：setter + getter 方法
+  - 实例变量：备份存储
+- Swift
+  - 计算属性
+
+## 计算属性 - Computed Properties
+
+- 场景：无法直接赋值，需要经过计算得出
+
+- 相当于 OC 的 property 属性
+
+- 适用：类 + 结构体 + 枚举（枚举的 rawValue 本质：只读计算属性）
+- 定义时：不写 = ，直接写大括号
+- 不存储值，只提供一个 getter 和一个可选的 setter
+
+```swift
+struct Point {
+    var x = 0.0, y = 0.0
+}
+struct Size {
+    var width = 0.0, height = 0.0
+}
+struct Rect {
+    var origin = Point()
+    var size = Size()
+    var center: Point {
+        get {
+            let centerX = origin.x + (size.width / 2)
+            let centerY = origin.y + (size.height / 2)
+            return Point(x: centerX, y: centerY)
+        }
+        set(newCenter) {
+            origin.x = newCenter.x - (size.width / 2)
+            origin.y = newCenter.y - (size.height / 2)
+        }
+    }
+}
+var square = Rect(origin: Point(x: 0.0, y: 0.0),
+    size: Size(width: 10.0, height: 10.0))
+let initialSquareCenter = square.center
+square.center = Point(x: 15.0, y: 15.0)
+print("square.origin is now at (\(square.origin.x), \(square.origin.y))")
+// 打印“square.origin is now at (10.0, 10.0)”	
+```
+
+![img](https://docs.swift.org/swift-book/_images/computedProperties_2x.png)
+
 ### 简化 Setter 声明
+
+- setter方法默认参数名：newValue (getter 方法没有参数，只返回)
+- 上面代码的 setter 简化写法
+
+```swift
+set {
+            origin.x = newValue.x - (size.width / 2)
+            origin.y = newValue.y - (size.height / 2)
+        }
+```
+
 ### 简化 Getter 声明
+
+- 单一表达式，可隐式返回
+
+```swift
+get {
+            Point(x: origin.x + (size.width / 2), y: origin.y + (size.height / 2))
+        }
+```
+
 ### 只读计算属性
 
-## 属性观察器
+- 只有 getter 没有 setter 的计算属性
+- 总是返回一个值，可以通过点运算符访问，不能设置新的值
 
-## 属性包装器
+> 必须使用 `var` 关键字定义计算属性，包括只读计算属性，因为它们的值不是固定的。
+>
+> `let` 关键字只用来声明常量属性，表示初始化后再也无法修改的值。
+
+- 写法：
+  - 去掉 set
+  - 去掉get，return 即可（可隐式返回）
+
+- 结构体，表示三维空间的立方体，包含 `width`、`height` 和 `depth` 属性。结构体还有一个名为 `volume` 的只读计算属性用来返回立方体的体积。
+
+  ```swift
+  struct Cuboid {
+      var width = 0.0, height = 0.0, depth = 0.0
+      var volume: Double {
+          return width * height * depth
+      }
+  }
+  let fourByFiveByTwo = Cuboid(width: 4.0, height: 5.0, depth: 2.0)
+  // fourByFiveByTwo.volume = 10 
+  // Cannot assign to property: 'volume' is a get-only property
+  print("the volume of fourByFiveByTwo is \(fourByFiveByTwo.volume)")
+  // 打印“the volume of fourByFiveByTwo is 40.0”
+  ```
+
+## 属性观察器 / 观察者
+
+- 给属性赋值时，都会调用属性观察器（新值和当前值相同的时候也不例外）
+- 适用：
+  - 存储属性（自定义 + 继承）（子类重写父类属性，添加属性观察器）
+  - 计算属性（继承）（自定义建议适用 setter，不建议使用属性观察器）
+- 两种观察器：
+  - willSet 设置新值之前调用
+  - didSet 设置新值之后调用
+- 方法的 **形式参数**默认值（常量，可重新命名）
+  - willSet - newValue
+  - didSet - oldValue
+  - 在 didSet 观察器，给属性赋新值，新值会覆盖刚赋的值
+
+> - 属性定义（设置默认值）时，也不会触发属性观察器
+> - 初始化器赋值，不会触发（自己）属性观察器（可以触发父类的）
+>   - 父类属性的 willSet 和 didSet ，会**在子类初始化器**中设置父类属性时被调用
+>   - 父类初始化方法调用之前，给子类的属性赋值时不会调用子类属性的观察器
+
+```swift
+class StepCounter {
+    var totalSteps: Int = 0 {
+        willSet(newTotalSteps) {
+            print("将 totalSteps 的值设置为 \(newTotalSteps)")
+        }
+        didSet {
+            if totalSteps > oldValue  {
+                print("增加了 \(totalSteps - oldValue) 步")
+            }
+        }
+    }
+}
+let stepCounter = StepCounter()
+stepCounter.totalSteps = 200
+// 将 totalSteps 的值设置为 200
+// 增加了 200 步
+stepCounter.totalSteps = 360
+// 将 totalSteps 的值设置为 360
+// 增加了 160 步
+stepCounter.totalSteps = 896
+// 将 totalSteps 的值设置为 896
+// 增加了 536 步
+```
+
+> 给函数inout参数传参时，会触发属性观察器
+>
+> - 普通实参：没有设置属性观察器 、非计算属性
+>   - 直接将 实参内存地址传入函数（引用传递）
+>
+> - 设置了属性观察器 / 计算属性 （采用了copy in copy out - 拷入拷出的内存模式）
+>   - 传参时，复制实参的值，产生副本【get】
+>   - 将副本内存地址传入函数（副本进行引用传递），函数内部修改副本的值
+>   - 函数结束 / 返回，将副本的值覆盖实参的值【set】
+>
+> ```swift
+> func test(age:inout Int, name:inout String) -> Void {
+>     age = 111;
+>     name = "111"
+> }
+> 
+> test(age: &s.age, name: &s.name)
+> ```
+
+## 属性包装 / 包裹 器
+
+- 场景：利用结构体 + @propertyWrapper + wrapperValue（var wrapper: Int）+ @structName（@TwelveOrLess var height：Int），**封装**属性的 setter + getter 方法
+
+- 通过使用 `wrappedValue` 的 getter 和 setter 来获取这个值，但不能直接使用 `number`
+
+```swift
+struct SmallRectangle {
+    @TwelveOrLess var height: Int
+    @TwelveOrLess var width: Int
+}
+
+var rectangle = SmallRectangle()
+print(rectangle.height)
+// 打印 "0"
+
+rectangle.height = 10
+print(rectangle.height)
+// 打印 "10"
+
+rectangle.height = 24
+print(rectangle.height)
+// 打印 "12"	
+```
+
+- `height` 和 `width` 属性从 `TwelveOrLess` 的定义中获取它们的初始值。该定义把 `TwelveOrLess.number` 设置为 0
+- 存储 24 的操作实际上存储的值为 12，这是因为对于这个属性的 setter 的规则来说，24 太大了。
+
+- 不使用 包装属性 语法, 是下面的代码
+
+```swift
+struct SmallRectangle {
+    private var _height = TwelveOrLess()
+    private var _width = TwelveOrLess()
+    var height: Int {
+        get { return _height.wrappedValue }
+        set { _height.wrappedValue = newValue }
+    }
+    var width: Int {
+        get { return _width.wrappedValue }
+        set { _width.wrappedValue = newValue }
+    }
+}
+```
+
 ### 设置被包装属性的初始值
-### 从属性包装器中呈现一个值
+
+- 上述方法弊端：无法在定义时，给属性赋初值 + 其他自定义操作
+- 增加构造器
+
+```swift
+@propertyWrapper
+struct SmallNumber {
+    private var maximum: Int
+    private var number: Int
+
+    var wrappedValue: Int {
+        get { return number }
+        set { number = min(newValue, maximum) }
+    }
+
+    init() {
+        maximum = 12
+        number = 0
+    }
+    init(wrappedValue: Int) {
+        maximum = 12
+        number = min(wrappedValue, maximum)
+    }
+    init(wrappedValue: Int, maximum: Int) {
+        self.maximum = maximum
+        number = min(wrappedValue, maximum)
+    }
+}
+```
+
+- `SmallNumber` 的定义包括三个构造器——`init()`、`init(wrappedValue:)` 和 `init(wrappedValue:maximum:)`——下面的示例使用这三个构造器来设置被包装值和最大值。
+
+- 使用 `init()` 构造器来设置包装器。
+
+```swift
+struct ZeroRectangle {
+    @SmallNumber var height: Int
+    @SmallNumber var width: Int
+}
+
+var zeroRectangle = ZeroRectangle()
+print(zeroRectangle.height, zeroRectangle.width)
+// 打印 "0 0"
+```
+
+- 构造器内部的代码使用默认值 0 和 12 设置初始的被包装值和初始的最大值
+
+
+
+- 使用 `init(wrappedValue:)` 构造器来设置包装器
+
+```swift
+struct UnitRectangle {
+    @SmallNumber var height: Int = 1
+    @SmallNumber var width: Int = 1
+}
+
+var unitRectangle = UnitRectangle()
+print(unitRectangle.height, unitRectangle.width)
+// 打印 "1 1"
+```
+
+
+
+- Swift 使用 `init(wrappedValue:maximum:)` 构造器
+
+```swift
+struct NarrowRectangle {
+    @SmallNumber(wrappedValue: 2, maximum: 5) var height: Int
+    @SmallNumber(wrappedValue: 3, maximum: 4) var width: Int
+}
+
+var narrowRectangle = NarrowRectangle()
+print(narrowRectangle.height, narrowRectangle.width)
+// 打印 "2 3"
+
+narrowRectangle.height = 100
+narrowRectangle.width = 100
+print(narrowRectangle.height, narrowRectangle.width)
+// 打印 "5 4"
+```
+
+
+
+- 使用赋值来指定初始值
+
+```swift
+struct MixedRectangle {
+    @SmallNumber var height: Int = 1
+    @SmallNumber(maximum: 9) var width: Int = 2
+}
+
+var mixedRectangle = MixedRectangle()
+print(mixedRectangle.height)
+// 打印 "1"
+
+mixedRectangle.height = 20
+print(mixedRectangle.height)
+// 打印 "12"
+```
+
+### 从属性包装器中呈现一个值 / 通过属性包装映射值
+
+- 给 SmallNumber 结构体添加了 projectedValue 属性，以追踪属性包装是否在保存新值之前调整了新值的大小
+
+```swift
+@propertyWrapper
+struct SmallNumber {
+    private var number: Int
+    var projectedValue: Bool
+    init() {
+        self.number = 0
+        self.projectedValue = false
+    }
+    var wrappedValue: Int {
+        get { return number }
+        set {
+            if newValue > 12 {
+                number = 12
+                projectedValue = true
+            } else {
+                number = newValue
+                projectedValue = false
+            }
+        }
+    }
+}
+struct SomeStructure {
+    @SmallNumber var someNumber: Int
+}
+var someStructure = SomeStructure()
+
+someStructure.someNumber = 4
+print(someStructure.$someNumber)
+// 打印 "false"
+
+someStructure.someNumber = 55
+print(someStructure.$someNumber)
+// 打印 "true"
+```
+
+- 使用 s.$someNumber 来访问包装的映射值。在保存一个小数字比如四之后，s.$someNumber 的值是 false 。总之，在尝试保存一个过大的数字时映射的值就是true 了，比如 55.
+
+
+
+```swift
+enum Size {
+    case small, large
+}
+
+struct SizedRectangle {
+    @SmallNumber var height: Int
+    @SmallNumber var width: Int
+
+    mutating func resize(to size: Size) -> Bool {
+        switch size {
+        case .small:
+            height = 10
+            width = 20
+        case .large:
+            height = 100
+            width = 100
+        }
+        return $height || $width
+    }
+}	
+```
+
+- 在 resize(to:) 结尾，返回语句检查$height 和 $width 来决定属性包装是否调整了 height 或 width 。
 
 ## 全局变量和局部变量
 
+- 计算属性 + 观察属性 适用 *全局变量*和*局部变量*
+
+- 全局变量： 定义在任何函数、方法、闭包或者类型环境 外包的变量
+- 局部变量：定义在函数、方法或者闭包环境 内部的变量
+
+- 存储型变量：跟存储属性类似（前面章节提到的全局变量 + 局部变量 都是存储变量）
+- 计算型变量：跟计算属性类似，与计算属性的写法一致，返回变量计算，而不是存储值
+
+> 全局的常量或变量都是延迟计算的，跟 延时加载存储属性 相似，不同的地方在于，全局的常量或变量不需要标记 lazy 修饰符。
+>
+> 局部范围的常量和变量从不延迟计算。
+
 ## 类型属性
+
+- 属性分类
+  - 实例属性：实例之间的属性相互独立
+  - 类型属性：只有唯一一份（静态常量 / 静态变量）
+    - 存储型类型属性：可以是变量或常量
+    - 计算型类型属性：只能是变量
+
+> - 跟实例的存储型属性不同，必须给存储型类型属性一个默认值
+>   - 类型本身没有构造器
+>   - 也无法初始化过程中使用构造器给类型属性赋值
+> - 存储型类型属性会延迟初始化
+>   - 只有在第一次被访问的时候才会被初始化
+>   - 被多个线程同时访问，系统也保证只会对其进行一次初始化
+>   - 不需要使用 `lazy` 修饰符
+
 ### 类型属性语法
+
+- 在 C 或 Objective-C 中
+  - 静态常量和静态变量，是作为 *global*（全局）静态变量定义的
+
+- 在 Swift 中
+  - 写在类型最外层的花括号内
+  - 作用范围也就在类型支持的范围内
+- 使用关键字 `static` 来定义类型属性
+  - 定义计算型类型属性时，可以改用关键字 `class` 来支持子类对父类的实现进行重写
+
+```swift
+struct SomeStructure {
+    static var storedTypeProperty = "Some value."
+    static var computedTypeProperty: Int {
+        return 1
+    }
+}
+enum SomeEnumeration {
+    static var storedTypeProperty = "Some value."
+    static var computedTypeProperty: Int {
+        return 6
+    }
+}
+class SomeClass {
+    static var storedTypeProperty = "Some value."
+    static var computedTypeProperty: Int {
+        return 27
+    }
+    class var overrideableComputedTypeProperty: Int {
+        return 107
+    }
+}
+```
+
+> - 例子中的计算型类型属性是只读的
+>
+> - 也可以定义可读可写的计算型类型属性，跟计算型实例属性的语法相同。
+
 ### 获取和设置类型属性的值
 
+- 跟实例属性一样，类型属性也是通过点运算 / 点语法 符来访问
+- 类型属性是通过*类型*本身来访问，而不是通过实例
 
-# 方法
+```swift
+print(SomeStructure.storedTypeProperty)
+// 打印“Some value.”
+SomeStructure.storedTypeProperty = "Another value."
+print(SomeStructure.storedTypeProperty)
+// 打印“Another value.”
+print(SomeEnumeration.computedTypeProperty)
+// 打印“6”
+print(SomeClass.computedTypeProperty)
+// 打印“27”
+```
+
+- 下图展示了如何把两个声道结合来模拟立体声的音量。当声道的音量是 `0`，没有一个灯会亮；当声道的音量是 `10`，所有灯点亮。本图中，左声道的音量是 `9`，右声道的音量是 `7`
+
+![img](https://docs.swift.org/swift-book/_images/staticPropertiesVUMeter_2x.png)
+
+- 上面所描述的声道模型使用 `AudioChannel` 结构体的实例来表示：
+
+```swift
+struct AudioChannel {
+    static let thresholdLevel = 10
+    static var maxInputLevelForAllChannels = 0
+    var currentLevel: Int = 0 {
+        didSet {
+            if currentLevel > AudioChannel.thresholdLevel {
+                // 将当前音量限制在阈值之内
+                currentLevel = AudioChannel.thresholdLevel
+            }
+            if currentLevel > AudioChannel.maxInputLevelForAllChannels {
+                // 存储当前音量作为新的最大输入音量
+                AudioChannel.maxInputLevelForAllChannels = currentLevel
+            }
+        }
+    }
+}
+```
+
+- 最大上限阈值，它是一个值为 `10` 的常量，对所有实例都可见
+- 变量存储型属性 `maxInputLevelForAllChannels`，它用来表示所有 `AudioChannel` 实例的最大输入音量，初始值是 `0`。
+- 定义了一个名为 `currentLevel` 的存储型实例属性
+  - 包含 `didSet` 属性观察器来检查每次设置后的属性值
+
+> 在第一个检查过程中，`didSet` 属性观察器将 `currentLevel` 设置成了不同的值，但这不会造成属性观察器被再次调用
+
+- 使用
+
+```swift
+var leftChannel = AudioChannel()
+var rightChannel = AudioChannel()
+```
+
+- 将左声道的 `currentLevel` 设置成 `7`，类型属性 `maxInputLevelForAllChannels` 也会更新成 `7`：
+
+```swift
+leftChannel.currentLevel = 7
+print(leftChannel.currentLevel)
+// 输出“7”
+print(AudioChannel.maxInputLevelForAllChannels)
+// 输出“7”
+```
+
+- 右声道的 `currentLevel` 设置成 `11`，它会被修正到最大值 `10`，同时 `maxInputLevelForAllChannels` 的值也会更新到 `10`
+
+```swift
+rightChannel.currentLevel = 11
+print(rightChannel.currentLevel)
+// 输出“10”
+print(AudioChannel.maxInputLevelForAllChannels)
+// 输出“10”
+```
+
+# 方法 - Methods
+
+- 方法 = 函数 + 类型
+
+- 类
+
+类
 
 ## 实例方法（Instance Methods）
 ### self 属性
