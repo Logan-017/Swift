@@ -4543,18 +4543,245 @@ print(AudioChannel.maxInputLevelForAllChannels)
 # 方法 - Methods
 
 - 方法 = 函数 + 类型
+- OC 能定义方法的类型：类
 
-- 类
-
-类
+- Swift 能定义方法的类型：类、结构体、枚举
+- 方法的种类
+  - 实例方法：
+  - 类型方法：
 
 ## 实例方法（Instance Methods）
+
+- 调用者：类实例、结构体实例、枚举实例
+- 实例方法内部，可隐式调用 该类下其他属性 + 实例方法
+
+```swift
+ class Counter {
+    var count = 0 // 保持对当前计数器值的追踪
+    func increment() { // 让计数器按一递增；
+        count += 1
+    }
+    func increment(by amount: Int) { // 让计数器按一个指定的整数值递增；
+        count += amount
+    }
+    func reset() { // 将计数器重置为0。
+        count = 0
+    }
+}	
+```
+
+- 用点语法（dot syntax）调用实例方法
+
+```swift
+let counter = Counter()
+// 初始计数值是0
+counter.increment()
+// 计数值现在是1
+counter.increment(by: 5)
+// 计数值现在是6
+counter.reset()
+// 计数值现在是0
+```
+
 ### self 属性
+
+- 隐性属性 self，本质：self = （外部调用方法的）实例本身
+- 上述方法，非隐式写法
+
+```swift
+func increment() {
+    self.count += 1
+}
+```
+
+- 一般建议不写 self
+
+
+
+- （实例方法的）参数名 = （实例的）属性名
+  - 优先级：参数名 > 属性名
+  - 建议：使用 self 属性来区分
+
+```swift
+struct Point {
+    var x = 0.0, y = 0.0
+    func isToTheRightOf(x: Double) -> Bool {
+        return self.x > x
+    }
+}
+let somePoint = Point(x: 4.0, y: 5.0)
+if somePoint.isToTheRightOf(x: 1.0) {
+    print("This point is to the right of the line where x == 1.0")
+}
+// 打印“This point is to the right of the line where x == 1.0”
+```
+
+- 若不用 self， 默认是实例方法的参数 x 
+
 ### 在实例方法中修改值类型
+
+- 值类型（结构体、枚举）的属性，无法在实例方法中被修改
+- mutating 关键字
+  - 修改值类型
+  - 也可修改 self
+
+```swift
+struct Point {
+    var x = 0.0, y = 0.0
+    mutating func moveBy(x deltaX: Double, y deltaY: Double) {
+        x += deltaX
+        y += deltaY
+    }
+}
+var somePoint = Point(x: 1.0, y: 1.0)
+somePoint.moveBy(x: 2.0, y: 3.0)
+print("The point is now at (\(somePoint.x), \(somePoint.y))")
+// 打印“The point is now at (3.0, 4.0)”
+```
+
+- 注意，不能在结构体类型的常量（a constant of structure type）上调用可变方法，因为其属性不能被改变，即使属性是变量属性
+
+```swift
+let fixedPoint = Point(x: 3.0, y: 3.0)
+fixedPoint.moveBy(x: 2.0, y: 3.0)
+// 这里将会报告一个错误
+```
+
 ### 在可变方法中给 self 赋值
+
+```swift
+struct Point {
+    var x = 0.0, y = 0.0
+    mutating func moveBy(x deltaX: Double, y deltaY: Double) {
+        self = Point(x: x + deltaX, y: y + deltaY)
+    }
+}
+```
+
+-  `moveBy(x:y:)` 创建了一个新的结构体实例，它的 x 和 y 的值都被设定为目标值。
+
+
+
+- 枚举的可变方法可以把 `self` 设置为同一枚举类型中不同的成员：
+
+```swift
+enum TriStateSwitch {
+    case off, low, high
+    mutating func next() {
+        switch self {
+        case .off:
+            self = .low
+        case .low:
+            self = .high
+        case .high:
+            self = .off
+        }
+    }
+}
+var ovenLight = TriStateSwitch.low
+ovenLight.next()
+// ovenLight 现在等于 .high
+ovenLight.next()
+// ovenLight 现在等于 .off
+```
+
+- 调用 `next()` 方法时，开关在不同的电源状态（`off`, `low`, `high`）之间循环切换
 
 ## 类型方法
 
+- 在方法的 `func` 关键字前加上关键字 `static`，指定类型方法
+- 用关键字 `class` 来指定，允许子类重写父类方法的实现
+
+> OC 只能为 Objective-C 的类类型（classes）定义类型方法（type-level methods）。
+>
+> 
+>
+> 在 Swift 中，你可以为所有的类、结构体和枚举定义类型方法。
+
+- 和实例方法一样用点语法调用
+
+```swift
+class SomeClass {
+    class func someTypeMethod() {
+        // 在这里实现类型方法
+    }
+}
+SomeClass.someTypeMethod()
+```
+
+- 在类型方法中，`self` 属性 = 类型本身，而非实例
+- 可用 self，处理类型属性和类型方法参数同名的问题
+
+- 内部调用
+
+  - 方法和属性，可被本类中其他的类型方法和类型属性引用。
+  - 通过类型方法的名称调用本类中的其它类型方法（结构体和枚举亦然）
+
+  
+
+- 例子：每次有玩家完成一个等级，这个等级就对这个设备上的所有玩家解锁。`LevelTracker` 结构体用类型属性和方法监测游戏的哪个等级已经被解锁。它还监测每个玩家的当前等级
+
+```swift
+struct LevelTracker {
+    static var highestUnlockedLevel = 1
+    var currentLevel = 1 // 监测每个玩家当前的等级
+
+    static func unlock(_ level: Int) {
+        if level > highestUnlockedLevel { highestUnlockedLevel = level }
+    }
+
+    static func isUnlocked(_ level: Int) -> Bool {// 给定的等级是否已经被解锁
+        return level <= highestUnlockedLevel
+    }
+
+    @discardableResult // 可忽略该函数的返回值
+    mutating func advance(to level: Int) -> Bool {
+        if LevelTracker.isUnlocked(level) {
+            currentLevel = level
+            return true
+        } else {
+            return false
+        }
+    }
+}
+```
+
+- 调用
+
+```swift
+class Player {
+    var tracker = LevelTracker() 
+    let playerName: String
+    func complete(level: Int) {
+        LevelTracker.unlock(level + 1)
+        tracker.advance(to: level + 1)
+    }
+    init(name: String) {
+        playerName = name
+    }
+}
+```
+
+- 创建一个 `Player` 的实例
+
+```swift
+var player = Player(name: "Argyrios")
+player.complete(level: 1)
+print("highest unlocked level is now \(LevelTracker.highestUnlockedLevel)")
+// 打印“highest unlocked level is now 2”
+```
+
+- 创建了第二个玩家，开始一个没有被任何玩家解锁的等级，设置玩家当前等级将会失败：
+
+```swift
+player = Player(name: "Beto")
+if player.tracker.advance(to: 6) {
+    print("player is now on level 6")
+} else {
+    print("level 6 has not yet been unlocked")
+}
+// 打印“level 6 has not yet been unlocked”
+```
 
 # 下标
 
