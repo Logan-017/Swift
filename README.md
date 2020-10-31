@@ -4785,15 +4785,143 @@ if player.tracker.advance(to: 6) {
 
 # 下标
 
+- 适用：类、结构体、枚举
+- 场景：读写 集合、列表、序列 中的元素（比调用方法便捷）
+- someArray[index]、someDictionary[key]
+- 不同数据类型的索引，构成重载
+- 不限于一维，可以是多维
+
 ## 下标语法
+
+- 似于实例方法语法和计算型属性语法
+- 定义：
+  - 使用 `subscript` 关键字，与定义实例方法类似
+  - 一个或多个参数 + 一个返回类型
+  - 与实例方法不同，可读写、或只读
+  - 由 getter 和 setter 实现，类似计算型属性：
+
+```swift
+subscript(index: Int) -> Int {
+    get {
+      // 返回一个适当的 Int 类型的值
+    }
+    set(newValue) {
+      // 执行适当的赋值操作
+    }
+}
+```
+
+- 不指定  setter 的参数，setter 提供 newValue 的默认参数
+
+- 只读下标简写：类似于只读计算型属性，可省略 get 关键字
+
+```swift
+subscript(index: Int) -> Int {
+    // 返回一个适当的 Int 类型的值
+}
+```
+
+- eg.只读下标，定义一个整数 3 乘法表的结构体
+
+```swift
+struct TimesTable {
+    let multiplier: Int
+    subscript(index: Int) -> Int { // 只读下标
+        return multiplier * index
+    }
+}
+let threeTimesTable = TimesTable(multiplier: 3)
+print("six times three is \(threeTimesTable[6])")
+// 打印“six times three is 18”
+```
 
 ## 下标用法
 
+- 通过下标将 `String` 类型的键 `bird` 和 `Int` 类型的值 `2` 添加到字典中
+
+```swift
+var numberOfLegs = ["spider": 8, "ant": 6, "cat": 4]
+numberOfLegs["bird"] = 2
+```
+
+>  Swift 的 `Dictionary` 类型的下标接受并返回*可选*类型的值
+>
+> 因为不是每个键都有对应的值，同时这也提供了一种通过键删除对应值的方式，只需将键对应的值赋值为 `nil` 即可
+
 ## 下标选项
+
+- 下标的本质是函数：可以多个参数，参数可任意的类型，返回值可任意类型
+- 参数可为可变参数、默认参数，但不能是 inout 参数
+- 一个 `Double` 类型的二维矩阵结构体
+
+```swift
+struct Matrix {
+    let rows: Int, columns: Int
+    var grid: [Double]
+    init(rows: Int, columns: Int) {
+        self.rows = rows
+        self.columns = columns
+        grid = Array(repeating: 0.0, count: rows * columns)
+    }
+    func indexIsValid(row: Int, column: Int) -> Bool {
+        return row >= 0 && row < rows && column >= 0 && column < columns
+    }
+    subscript(row: Int, column: Int) -> Double {
+        get {
+            assert(indexIsValid(row: row, column: column), "Index out of range")
+            return grid[(row * columns) + column]
+        }
+        set {
+            assert(indexIsValid(row: row, column: column), "Index out of range")
+            grid[(row * columns) + column] = newValue
+        }
+    }
+}
+```
+
+```swift
+var matrix = Matrix(rows: 2, columns: 2)
+```
+
+- 该 `Matrix` 实例的 `grid` 数组按照从左上到右下的阅读顺序将矩阵扁平化存储：
+
+<img src="https://docs.swift.org/swift-book/_images/subscriptMatrix01_2x.png" alt="img" style="zoom: 67%;" />
+
+- 下标的多个参数，使用逗号分隔：
+
+```swift
+matrix[0, 1] = 1.5
+matrix[1, 0] = 3.2
+```
+
+![img](https://docs.swift.org/swift-book/_images/subscriptMatrix02_2x.png)
+
+- 断言在下标越界时触发：
+
+```swift
+let someValue = matrix[2, 2]
+// 断言将会触发，因为 [2, 2] 已经超过了 matrix 的范围
+```
 
 ## 类型下标
 
+- 定义和调用一个类型下标：
+
+```swift
+enum Planet: Int {
+    case mercury = 1, venus, earth, mars, jupiter, saturn, uranus, neptune
+    static subscript(n: Int) -> Planet {
+        return Planet(rawValue: n)!
+    }
+}
+let mars = Planet[4]
+print(mars)
+```
+
 # 继承
+
+
+
 ## 定义一个基类
 ## 子类生成
 ## 重写
