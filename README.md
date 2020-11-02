@@ -4918,38 +4918,530 @@ let mars = Planet[4]
 print(mars)
 ```
 
-# 继承
+# 继承 - Inheritance
 
-
+- 区分【类】和其他类型的一个特征：继承
+- 子类 继承 超类（父类）的属性、方法和下标。
+  - 可调用和访问 超类
+  - 可 重写 超类的方法、属性和下标
+  - 为继承来的属性，添加属性观察器（存储属性和计算属性都可以）
 
 ## 定义一个基类
+- 基类：不继承其他类
+
+> 与 OC 相比，Swift 类不会从一个通用基类继承。
+>
+> 你没有指定特定父类的类都会以基类的形式创建。
+
+```swift
+class Vehicle {
+    var currentSpeed = 0.0
+    var description: String {
+        return "traveling at \(currentSpeed) miles per hour"
+    }
+    func makeNoise() {
+        // 什么也不做——因为车辆不一定会有噪音
+    }
+}
+```
+
+```swift
+let someVehicle = Vehicle()
+```
+
+- 访问它的 `description` 属性来打印车辆的当前速度：
+
+```
+print("Vehicle: \(someVehicle.description)")
+// 打印“Vehicle: traveling at 0.0 miles per hour”
+```
+
 ## 子类生成
+
+- 指明某个类的超类，将超类名写在子类名的后面，用冒号分隔：
+
+```swift
+class SomeClass: SomeSuperclass {
+    // 这里是子类的定义
+}
+```
+
+```swift
+class Bicycle: Vehicle {
+    var hasBasket = false
+}
+```
+
+```swift
+let bicycle = Bicycle()
+bicycle.hasBasket = true
+```
+
+- 修改继承的 `currentSpeed` 属性
+
+```swift
+bicycle.currentSpeed = 15.0
+print("Bicycle: \(bicycle.description)")
+// 打印“Bicycle: traveling at 15.0 miles per hour”
+```
+
+- 创建了一个名为 `Tandem`（双人自行车）的子类
+
+```swift
+class Tandem: Bicycle {
+    var currentNumberOfPassengers = 0
+}
+```
+
+```swift
+let tandem = Tandem()
+tandem.hasBasket = true
+tandem.currentNumberOfPassengers = 2
+tandem.currentSpeed = 22.0
+print("Tandem: \(tandem.description)")
+// 打印：“Tandem: traveling at 22.0 miles per hour”
+```
+
 ## 重写
+
+- 重写：子类可以为继承来的实例方法，类方法，实例属性，类属性，或下标提供自己定制的实现
+
+- 重写（非继承）定义前面加上 override 关键字（不写关键字会报错）
+- override 会查找父类是否有重写的属性、方法等
+
 ### 访问超类的方法，属性及下标
+
+- 重写时，可多调用父类方法实现
+- 使用 `super` 前缀来访问超类版本的方法，属性或下标：
+  - 方法重写：通过 `super.someMethod()` 来调用超类版本的 `someMethod()` 方法
+  - 属性的 getter 、setter 的重写： `super.someProperty` 来访问超类 `someProperty` 属性
+  - 下标重写：通过 `super[someIndex]` 来访问超类版本中的相同下标
+
 ### 重写方法
-### 重写属
+
+- 可重写方法类型：实例方法、类型方法
+
+```swift
+class Train: Vehicle {
+    override func makeNoise() {
+        print("Choo Choo")
+    }
+}
+```
+
+```swift
+let train = Train()
+train.makeNoise()
+// 打印“Choo Choo”
+```
+
+### 重写属性
+
+- 可重写的属性类型：存储属性、计算属性
+- 重写属性-应用场景：
+  - 自定义 getter + setter 方法实现
+  - 添加属性观察器
+
 #### 重写属性的 Getters 和 Setters
+
+- 重写声明：属性名 + 类型
+- 只读属性 **可**重写为 读写属性（同时提供 getter + setter 即可）
+- 读写属性 **不可**重写为 只读属性
+
+> 重写属性的增加 setter，也必须 提供 getter方法
+>
+> 不想改变父类getter，可通过 `super.someProperty` 来返回继承来的值
+
+```swift
+class Car: Vehicle {
+    var gear = 1
+    override var description: String {
+        return super.description + " in gear \(gear)"
+    }
+}
+```
+
+```swift
+let car = Car()
+car.currentSpeed = 25.0
+car.gear = 3
+print("Car: \(car.description)")
+// 打印“Car: traveling at 25.0 miles per hour in gear 3”
+```
+
 #### 重写属性观察器
+
+> - 无法添加属性观察器：
+>   - 常量 的存储属性（常量无法修改）
+>   - 只读计算属性 （只读不能写入）
+> - 不可同时提供 setter + 属性观察器 （只需在 setter 内部监听即可）
+
+- 
+
+```swift
+let car = Car()
+car.currentSpeed = 25.0
+car.gear = 3
+print("Car: \(car.description)")
+// 打印“Car: traveling at 25.0 miles per hour in gear 3”
+```
+
+- 属性观察器将新的速度值除以 `10`，然后向下取得最接近的整数值，最后加 `1` 来得到档位 `gear` 的值。例如，速度为 `35.0` 时，档位为 `4`：
+
+```swift
+let automatic = AutomaticCar()
+automatic.currentSpeed = 35.0
+print("AutomaticCar: \(automatic.description)")
+// 打印“AutomaticCar: traveling at 35.0 miles per hour in gear 4”
+```
+
 ## 防止重写
 
-# 构造过程
+- 防重写，但可继承
+  - 在声明关键字前加上 `final` 修饰符
+  - 例如：`final var`、`final func`、`final class func` 以及 `final subscript`
+- 类拓展也可使用 final 标记
+- 防止继承
+  - 在关键字 `class` 前添加 `final` 修饰符（`final class`）来将整个类标记为 final 
+
+# 构造 / 初始化过程 - Initialization
+
+- 与 Objective -C 不同，Swift 的构造器没有返回值。
+
 ## 存储属性的初始赋值
-### 构造器
+
+> 初始化器内部，修改存储属性默认值，不会触发属性监听器
+
+### 构造器 / 初始化器
+
+- 最简形式
+
+```swift
+init() {
+    // 在此处执行构造过程
+}
+```
+
+- 保存华氏温度的结构体 `Fahrenheit`，它拥有一个 `Double` 类型的存储型属性 `temperature`：
+
+```swift
+struct Fahrenheit {
+    var temperature: Double
+    init() {
+        temperature = 32.0
+    }
+}
+var f = Fahrenheit()
+print("The default temperature is \(f.temperature)° Fahrenheit")
+// 打印“The default temperature is 32.0° Fahrenheit”
+```
+
+- 定义了一个不带形参的构造器 `init`，并在里面将存储型属性 `temperature` 的值初始化为 `32.0`（华氏温度下水的冰点）。
+
 ### 默认属性值
+
+- 在属性声明时为 `temperature` 提供默认值
+
+```swift
+struct Fahrenheit {
+    var temperature = 32.0
+}
+```
+
 ## 自定义构造过程
+
 ### 形参的构造过程
+
+- 构造形参的功能和语法跟函数和方法的形参相同。
+
+```swift
+struct Celsius {
+    var temperatureInCelsius: Double
+    init(fromFahrenheit fahrenheit: Double) {
+        temperatureInCelsius = (fahrenheit - 32.0) / 1.8
+    }
+    init(fromKelvin kelvin: Double) {
+        temperatureInCelsius = kelvin - 273.15
+    }
+}
+
+let boilingPointOfWater = Celsius(fromFahrenheit: 212.0)
+// boilingPointOfWater.temperatureInCelsius 是 100.0
+let freezingPointOfWater = Celsius(fromKelvin: 273.15)
+// freezingPointOfWater.temperatureInCelsius 是 0.0
+```
+
+- 将单一的实参转换成摄氏温度值，并保存在属性 `temperatureInCelsius` 中。
+
 ### 形参命名和实参标签
+
+```swift
+struct Color {
+    let red, green, blue: Double
+    init(red: Double, green: Double, blue: Double) {
+        self.red   = red
+        self.green = green
+        self.blue  = blue
+    }
+    init(white: Double) {
+        red   = white
+        green = white
+        blue  = white
+    }
+}
+```
+
+```swift
+let magenta = Color(red: 1.0, green: 0.0, blue: 1.0)
+let halfGray = Color(white: 0.5)
+```
+
+```swift
+let veryGreen = Color(0.0, 1.0, 0.0)
+// 报编译期错误-需要实参标签
+```
+
 ### 不带实参标签的构造器形参
+
+- 使用下划线（`_`）来代替显式的实参标签来重写默认行为
+
+```swift
+struct Celsius {
+    var temperatureInCelsius: Double
+    init(fromFahrenheit fahrenheit: Double) {
+        temperatureInCelsius = (fahrenheit - 32.0) / 1.8
+    }
+    init(fromKelvin kelvin: Double) {
+        temperatureInCelsius = kelvin - 273.15
+    }
+    init(_ celsius: Double){
+        temperatureInCelsius = celsius
+    }
+}
+
+let bodyTemperature = Celsius(37.0)
+// bodyTemperature.temperatureInCelsius 为 37.0
+```
+
 ### 可选属性类型
+
+- 可选类型的属性将自动初始化为 `nil`，表示这个属性是特意在构造过程设置为空
+
+```swift
+class SurveyQuestion {
+    var text: String
+    var response: String?
+    init(text: String) {
+        self.text = text
+    }
+    func ask() {
+        print(text)
+    }
+}
+
+let cheeseQuestion = SurveyQuestion(text: "Do you like cheese?")
+cheeseQuestion.ask()
+// 打印“Do you like cheese?”
+cheeseQuestion.response = "Yes, I do like cheese."
+```
+
+- 调查问题的答案在询问前是无法确定的，因此我们将属性 `response` 声明为 `String?` 类型
+
 ### 构造过程中常量属性的赋值
+
+- 初始化方法内部，可给常量赋值
+- 一旦赋值，将不可更改
+
+> 类的实例，常量属性只能在类的构造过程中修改；
+>
+> 不能在子类中修改。
+
+- 用常量属性替代变量属性 `text`，表示问题内容 `text` 在 `SurveyQuestion` 的实例被创建之后不会再被修改
+
+```swift
+class SurveyQuestion {
+    let text: String
+    var response: String?
+    init(text: String) {
+        self.text = text
+    }
+    func ask() {
+        print(text)
+    }
+}
+let beetsQuestion = SurveyQuestion(text: "How about beets?")
+beetsQuestion.ask()
+// 打印“How about beets?”
+beetsQuestion.response = "I also like beets. (But not with cheese.)"
+```
+
 ## 默认构造器
-### 结构体的逐一成员构造器
+
+- 适用：结构体、类
+
+- 生成，默认构造器-前提条件
+  - 为所有属性提供了默认值
+  - 没有任何自定义的构造器
+- 默认构造器会创建一个所有属性值 = 默认值的实例
+
+```swift
+class ShoppingListItem {
+    var name: String?
+    var quantity = 1
+    var purchased = false
+}
+var item = ShoppingListItem()
+```
+
+### 结构体类型的成员初始化器 - memberwise initializer
+
+- 适用：结构体
+- 跟默认初始化器区别
+  - 属性无需有默认值
+  - 生成的初始化方法，可传参，然后传入默认值
+  - 可省略拥有默认值的属性
+
+```swift
+struct Size {
+    var width = 0.0, height = 0.0
+}
+let twoByTwo = Size(width: 2.0, height: 2.0)
+```
+
+```swift
+let zeroByTwo = Size(height: 2.0)
+print(zeroByTwo.width, zeroByTwo.height)
+// 打印 "0.0 2.0"
+
+
+let zeroByZero = Size()
+print(zeroByZero.width, zeroByZero.height)
+// 打印 "0.0 0.0"
+```
+
 ## 值类型的构造器代理
+
+- 构造器代理：初始化器调用其他初始化器来执行部分实例的初始化
+- 值类型（结构体 + 枚举）构造器
+  - 不支持继承
+  - 用 `self.init` 在自定义的构造器中引用相同类型中的其它构造器（只能在构造器内部调用）
+  - 对于值类型，自定义了构造器，默认构造器将会失效（如果想 默认构造器 + 逐一成员构造器 + 自定义构造器同时生效。解决：使用扩展（`extension`）自定义构造器）
+
+```swift
+struct Size {
+    var width = 0.0, height = 0.0
+}
+
+
+struct Point {
+    var x = 0.0, y = 0.0
+}
+```
+
+- 三种方式提供了三个自定义的构造器：
+
+```swift
+struct Rect {
+    var origin = Point()
+    var size = Size()
+    init() {}
+
+    init(origin: Point, size: Size) {
+        self.origin = origin
+        self.size = size
+    }
+
+    init(center: Point, size: Size) {
+        let originX = center.x - (size.width / 2)
+        let originY = center.y - (size.height / 2)
+        self.init(origin: Point(x: originX, y: originY), size: size)
+    }
+}	
+```
+
+```swift
+let basicRect = Rect()
+// basicRect 的 origin 是 (0.0, 0.0)，size 是 (0.0, 0.0)
+```
+
+```swift
+let originRect = Rect(origin: Point(x: 2.0, y: 2.0),
+    size: Size(width: 5.0, height: 5.0))
+// originRect 的 origin 是 (2.0, 2.0)，size 是 (5.0, 5.0)
+```
+
+- 先通过 `center` 和 `size` 的值计算出 `origin` 的坐标，然后再调用（或者说代理给）`init(origin:size:)` 构造器来将新的 `origin` 和 `size` 值赋值到对应的属性中
+
+```swift
+let originRect = Rect(origin: Point(x: 2.0, y: 2.0),
+    size: Size(width: 5.0, height: 5.0))
+// originRect 的 origin 是 (2.0, 2.0)，size 是 (5.0, 5.0)
+```
+
+> 使用 扩展，可以减少 定义 init() 和 init(origin:size:) 【默认初始化器】 的代码
+
 ## 类的继承和构造过程
+
+- 类的存储属性（包括继承父类的），在初始化时，必须有默认值
+- 保证存储属性有初始值的两种构造器：
+  - 指定构造器 - designated initializers
+  - 便利构造器 - convenience initializers
+
 ### 指定构造器和便利构造器
+
+- 指定初始化器（主要初始化器）
+  - 一个类至少有一个（继承父类的也算）
+  - 指定初始化器，像一个漏斗，是连接父类和子类的链条
+- 便捷初始化器（次要、辅助型）
+  - 可有可无，非必须的
+  - 可调用指定初始化器 - > 初始化属性默认值
+
 ### 指定构造器和便利构造器的语法
-### 类类型的构造器代理
+
+- 指定初始化器：与值类型的一致
+
+```swift
+init(parameters) {
+    statements
+}
+```
+
+- 便捷初始化器：多了一个 `convenience` 关键字
+
+```swift
+convenience init(parameters) {
+    statements
+}
+```
+
+### 类类型(Class Types)的构造器代理
+
+- 指定初始化器和便利初始化器的调用关系
+  - 规则1：指定构造器必须调用（直接）父类的指定构造器
+  - 规则2：便利构造器必须调用（*同一个类的）其它构造器。
+  - 规则3：便利构造器最后必须调用指定构造器。
+- 口诀
+  - 指定初始化器 必向上委托
+  - 便利初始化器 必横向委托
+- 图解：
+
+<img src="https://www.logcg.com/wp-content/uploads/2015/08/initializerDelegation01_2x.png" alt="initializerDelegation01_2x" style="zoom:50%;" />
+
+- 父类没有自己的父类，所以规则 1 没有用到
+- 两个指定构造器必须调用父类中唯一的指定构造器，这满足了规则 1
+
+
+
+- 更复杂的例子：演示指定初始化器在层级之间的漏斗作用
+
+<img src="https://www.logcg.com/wp-content/uploads/2015/08/initializerDelegation02_2x.png" alt="initializerDelegation02_2x" style="zoom:50%;" />
+
+
+
 ### 两段式构造过程
+
+
+
 ### 构造器的继承和重写
 ### 构造器的自动继承
 ### 指定构造器和便利构造器实践
