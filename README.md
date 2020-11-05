@@ -4922,16 +4922,15 @@ print(mars)
 
 - 区分【类】和其他类型的一个特征：继承
 - 子类 继承 超类（父类）的属性、方法和下标。
-  - 可调用和访问 超类
-  - 可 重写 超类的方法、属性和下标
-  - 为继承来的属性，添加属性观察器（存储属性和计算属性都可以）
+  - 可调用、重写父类的方法、属性和下标
+  - 为父类添加属性观察器（存储属性和计算属性都可以）
 
 ## 定义一个基类
 - 基类：不继承其他类
 
-> 与 OC 相比，Swift 类不会从一个通用基类继承。
+> 与 OC 相比，Swift 类不默认继承基类
 >
-> 你没有指定特定父类的类都会以基类的形式创建。
+> 没有指定父类，都是基类
 
 ```swift
 class Vehicle {
@@ -5076,14 +5075,14 @@ print("Car: \(car.description)")
 >   - 只读计算属性 （只读不能写入）
 > - 不可同时提供 setter + 属性观察器 （只需在 setter 内部监听即可）
 
-- 
-
 ```swift
-let car = Car()
-car.currentSpeed = 25.0
-car.gear = 3
-print("Car: \(car.description)")
-// 打印“Car: traveling at 25.0 miles per hour in gear 3”
+class AutomaticCar: Car {
+    override var currentSpeed: Double {
+        didSet {
+            gear = Int(currentSpeed / 10.0) + 1
+        }
+    }
+}
 ```
 
 - 属性观察器将新的速度值除以 `10`，然后向下取得最接近的整数值，最后加 `1` 来得到档位 `gear` 的值。例如，速度为 `35.0` 时，档位为 `4`：
@@ -5436,29 +5435,668 @@ convenience init(parameters) {
 
 <img src="https://www.logcg.com/wp-content/uploads/2015/08/initializerDelegation02_2x.png" alt="initializerDelegation02_2x" style="zoom:50%;" />
 
+### 两段式构造过程 - two-phase initialization
 
+- 类初始化两过程
+  - 第一阶段：存储属性赋初值
+  - 第二阶段：自定义存储属性的值
+- 两段式的四种安全检查：【实例非空 = 非继承属性有初始化值】
+  - 安全检查 1：向上委托父类之前，保证所有（非继承）属性初始化完成（保证实例非空）
+  - 安全检查 2：为继承属性设置新值，需要先向上委托父类初始化器（避免被覆盖）
+  - 安全检查3：便捷初始化器，先调用其他初始化器，再自定义属性新值（避免被覆盖）
+  - 安全检查4：必须等第一阶段初始化完成，才能调用实例方法、属性、self（第一阶段完成，实例才有值）
+- 两段式初始化 + 四种检查 详细流程：
+  - 阶段1：完成创建实例 = 指定初始化器 = 所有 子类 + 父类 存储属性都有值 
+    - 调用（指定 / 便利）构造器
+    - 完成实例的内存分配，但内存没被初始化
+    - 调用指定构造器，确保存储属性的内存完成初始化
+    - 指定构造器，调用父类构造器，完成存储属性初始化
+    - 继承链顶部，最后一类的存储实现已赋值，这个实例被认为完全初始化（阶段1完成）
+  - 阶段2：（非必须）调用便利初始化器 = 自定义属性的初始化值
+    - 自顶向下，继承链中的每个类，在自定义实例时，可访问 `self`、修改属性并调用实例方法等
+    - 便利构造器有机会自定义实例和使用 `self`
 
-### 两段式构造过程
+- 图解阶段1
+
+<img src="https://docs.swift.org/swift-book/_images/twoPhaseInitialization01_2x.png" alt="img" style="zoom: 50%;" />
+
+- 阶段2图解：
+
+<img src="https://docs.swift.org/swift-book/_images/twoPhaseInitialization02_2x.png" alt="img" style="zoom:50%;" />
 
 
 
 ### 构造器的继承和重写
+
+- 与 OC 不同，Swift子类不继承父类构造器。（防止父类简单初始化器被子类继承后，无法完成初始化或被错误初始化）
+
+> 特殊情况下会被继承。参考后续章节 构造器的自动继承。
+
+- 在子类可自定义与父类同名的指定初始化器（自动生成的父类初始化器，也可以重写）
+  - 必须写 override 修饰符（检查父类是否有同名初始化器）
+
+> 重写指定初始化器，必须写 override 修饰符，哪怕实现的是便捷初始化器
+
+- 重写便捷初始化器，不需要写 override 修饰符
+
+```swift
+class Vehicle {
+    var numberOfWheels = 0
+    var description: String {
+        return "\(numberOfWheels) wheel(s)"
+    }
+}
+```
+
+- 手动为属性赋默认值 + 没有自定义构造器 = 自动生成默认构造器（也是指定构造器）
+
+```swift
+let vehicle = Vehicle()
+print("Vehicle: \(vehicle.description)")
+// Vehicle: 0 wheel(s)
+```
+
+```swift
+class Bicycle: Vehicle {
+    override init() {
+        super.init()
+        numberOfWheels = 2
+    }
+}
+```
+
+- Bicycle 自定义指定构造器 `init()，和父类指定构造器相匹配，所以要写 override 修饰符`
+- 没有自定义 numberOfWheels = 2  ➕ 父类无参数 = 可省略 `super.init()` 的调用
+
+
+
+- 隐私调用 super.init()
+
+```swift
+class Hoverboard: Vehicle {
+    var color: String
+    init(color: String) {
+        self.color = color
+        // super.init() 在这里被隐式调用
+    }
+    override var description: String {
+        return "\(super.description) in a beautiful \(color)"
+    }
+}
+```
+
+> 子类只能修改继承的变量属性，不能修改常量属性
+
 ### 构造器的自动继承
+
+- 默认情况，子类不继承父类构造器。
+- 满足条件会自动继承 
+  - 自动继承**所有**指定初始化器：
+    - 子类全部**新**属性有默认值 + 子类没写**指定**构造器（便利构造器除外）
+  - 自动继承**所有**便捷初始化器：
+    - 在子类实现/调用了所有父类指定初始化器（包括 继承的实现 、自定义的实现）
+
+> 子类可以将父类的指定构造器实现为便利构造器来满足规则 2
+
 ### 指定构造器和便利构造器实践
-## 可失败构造器
+
+- 例子定义了包含三个类 `Food`、`RecipeIngredient` 以及 `ShoppingListItem` 的层级结构
+
+- `Food` 类引入了一个叫做 `name` 的 `String` 类型的属性，并且提供了两个构造器来创建 `Food` 实例
+
+```swift
+class Food {
+    var name: String
+    init(name: String) {
+        self.name = name
+    }
+
+
+    convenience init() {
+        self.init(name: "[Unnamed]")
+    }
+}
+```
+
+- 图解 Food 类的初始化链
+
+![img](https://docs.swift.org/swift-book/_images/initializersExample01_2x.png)
+
+- class 没有逐一成员构造器，`Food` 类提供了一个接受单一参数 `name` 的指定构造器
+
+```swift
+let namedMeat = Food(name: "Bacon")
+// namedMeat 的名字是 "Bacon"
+```
+
+- 能确保 `Food` 实例所有存储属性被初始化 = `init(name: String)` 被定义为指定构造器
+- `Food` 类没有父类 = 不需要调用 `super.init()`
+
+- 便利构造器 `init()`，横向代理到指定构造器 `init(name: String)` 并给参数 `name` 赋值为 `[Unnamed]` 来实现
+
+
+
+- `RecipeIngredient` 类用来表示食谱中的一项原料
+
+```swift
+class RecipeIngredient: Food {
+    var quantity: Int
+    init(name: String, quantity: Int) {
+        self.quantity = quantity
+        super.init(name: name)
+    }
+    override convenience init(name: String) {
+        self.init(name: name, quantity: 1)
+    }
+}
+```
+
+- 图解`RecipeIngredient` 类的构造器链
+
+<img src="https://docs.swift.org/swift-book/_images/initializersExample02_2x.png" alt="img" style="zoom:50%;" />
+
+- 指定构造器 `init(name: String, quantity: Int)`，填充 `RecipeIngredient` 实例的所有属性值
+
+- 将父类的指定构造器重写为了便利构造器，`RecipeIngredient` 自动继承所有便利构造器
+  - 便利构造器重写了**同名**父类的指定构造器 `init(name: String)`，用 `override` 修饰符
+
+- 三种构造器都可以用来创建新的 `RecipeIngredient` 实例：
+
+```swift
+let oneMysteryItem = RecipeIngredient()
+let oneBacon = RecipeIngredient(name: "Bacon")
+let sixEggs = RecipeIngredient(name: "Eggs", quantity: 6)
+```
+
+- 购物单中的每一项总是从未购买状态开始的
+
+```swift
+class ShoppingListItem: RecipeIngredient {
+    var purchased = false
+    var description: String {
+        var output = "\(quantity) x \(name)"
+        output += purchased ? " ✔" : " ✘"
+        return output
+    }
+}
+```
+
+- 因属性都有默认值，没定义任何构造器，将自动继承父类指定 + 便利 构造器
+
+<img src="https://docs.swift.org/swift-book/_images/initializersExample03_2x.png" alt="img" style="zoom:50%;" />
+
+- 使用三个继承来的构造器
+
+```swift
+var breakfastList = [
+    ShoppingListItem(),
+    ShoppingListItem(name: "Bacon"),
+    ShoppingListItem(name: "Eggs", quantity: 6),
+]
+breakfastList[0].name = "Orange juice"
+breakfastList[0].purchased = true
+for item in breakfastList {
+    print(item.description)
+}
+// 1 x orange juice ✔
+// 1 x bacon ✘
+// 6 x eggs ✘
+```
+
+- 组的类型也能被自动推导为 `[ShoppingListItem]`。
+
+## 可失败构造器 - Failable Initializers
+
+- 语法：在 `init` 关键字后面添加问号（`init?`）
+- 类型：为自身类型的可选类型的对象
+
+> 禁止可失败和非可失败的初始化器为相同参数类型和名称
+
+- 通过 `return nil` 语句来表明可失败
+
+> - 严格来说，构造器都不支持返回值.
+> - 可写 return nil 触发初始化失败，但不能用 return 关键字来表示初始化成功
+
+
+
+- 针对数字类型转换的可失败构造器
+
+```swift
+let wholeNumber: Double = 12345.0
+let pi = 3.14159
+
+if let valueMaintained = Int(exactly: wholeNumber) {
+    print("\(wholeNumber) conversion to Int maintains value of \(valueMaintained)")
+}
+// 打印“12345.0 conversion to Int maintains value of 12345”
+
+let valueChanged = Int(exactly: pi)
+// valueChanged 是 Int? 类型，不是 Int 类型
+
+if valueChanged == nil {
+    print("\(pi) conversion to Int does not maintain value")
+}
+// 打印“3.14159 conversion to Int does not maintain value”
+```
+
+- 传入的`species` 值是否为一个空字符串。如果为空字符串，则构造失败。
+
+```swift
+struct Animal {
+    let species: String
+    init?(species: String) {
+        if species.isEmpty {
+            return nil
+        }
+        self.species = species
+    }
+}
+```
+
+- 使用
+
+```swift
+let someCreature = Animal(species: "Giraffe")
+// someCreature 的类型是 Animal? 而不是 Animal
+
+
+if let giraffe = someCreature {
+    print("An animal was initialized with a species of \(giraffe.species)")
+}
+// 打印“An animal was initialized with a species of Giraffe”
+```
+
+- 传入一个空字符串
+
+```swift
+let anonymousCreature = Animal(species: "")
+// anonymousCreature 的类型是 Animal?, 而不是 Animal
+
+
+if anonymousCreature == nil {
+    print("The anonymous creature could not be initialized")
+}
+// 打印“The anonymous creature could not be initialized”
+```
+
+> 空字符串（`""`）其实是一个有效的，非可选类型的字符串
+>
+> 让 `Animal` 的可失败构造器构造失败，它更适合有一个具体的值，而不是空字符串
+
 ### 枚举类型的可失败构造器
+
+- 场景：获取枚举类型中特定的枚举成员
+
+```swift
+enum TemperatureUnit {
+    case Kelvin, Celsius, Fahrenheit
+    init?(symbol: Character) {
+        switch symbol {
+        case "K":
+            self = .Kelvin
+        case "C":
+            self = .Celsius
+        case "F":
+            self = .Fahrenheit
+        default:
+            return nil
+        }
+    }
+}
+```
+
+- 使用
+
+```swift
+let fahrenheitUnit = TemperatureUnit(symbol: "F")
+if fahrenheitUnit != nil {
+    print("This is a defined temperature unit, so initialization succeeded.")
+}
+// 打印“This is a defined temperature unit, so initialization succeeded.”
+
+let unknownUnit = TemperatureUnit(symbol: "X")
+if unknownUnit == nil {
+    print("This is not a defined temperature unit, so initialization failed.")
+}
+// 打印“This is not a defined temperature unit, so initialization failed.”
+```
+
 ### 带原始值的枚举类型的可失败构造器
+
+- 带原始值的枚举类型：自带一个可失败构造器 `init?(rawValue:)`
+
+```swift
+enum TemperatureUnit: Character {
+    case Kelvin = "K", Celsius = "C", Fahrenheit = "F"
+}
+
+let fahrenheitUnit = TemperatureUnit(rawValue: "F")
+if fahrenheitUnit != nil {
+    print("This is a defined temperature unit, so initialization succeeded.")
+}
+// 打印“This is a defined temperature unit, so initialization succeeded.”
+
+let unknownUnit = TemperatureUnit(rawValue: "X")
+if unknownUnit == nil {
+    print("This is not a defined temperature unit, so initialization failed.")
+}
+// 打印“This is not a defined temperature unit, so initialization failed.”
+```
+
 ### 构造失败的传递
+
+- 可失败初始化器可横向委托到同一个类
+- 子类的可失败初始化器可以向上委托到父类的可失败初始化器
+
+- 代理到的其他可失败构造器触发构造失败，整个构造过程将立即终止，接下来的任何构造代码不会再被执行
+
+>  可失败构造器也，可代理到其它的不可失败构造器
+>
+> 为已有的初始化过程添加初始化失败的条件
+
+
+
+```swift
+class Product {
+    let name: String
+    init?(name: String) {
+        if name.isEmpty { return nil }
+        self.name = name
+    }
+}
+
+class CartItem: Product {
+    let quantity: Int
+    init?(name: String, quantity: Int) {
+        if quantity < 1 { return nil }
+        self.quantity = quantity
+        super.init(name: name)
+    }
+}
+```
+
+- 若 `quantity` 值无效，则立即终止整个构造过程
+
+- 成功使用
+
+```swift
+if let twoSocks = CartItem(name: "sock", quantity: 2) {
+    print("Item: \(twoSocks.name), quantity: \(twoSocks.quantity)")
+}
+// 打印“Item: sock, quantity: 2”
+```
+
+- 值为 0 的 `quantity` 来创建，失败
+
+```swift
+if let zeroShirts = CartItem(name: "shirt", quantity: 0) {
+    print("Item: \(zeroShirts.name), quantity: \(zeroShirts.quantity)")
+} else {
+    print("Unable to initialize zero shirts")
+}
+// 打印“Unable to initialize zero shirts”
+```
+
+- 值为空字符串的 `name` 来创建，失败
+
+```swift
+if let oneUnnamed = CartItem(name: "", quantity: 1) {
+    print("Item: \(oneUnnamed.name), quantity: \(oneUnnamed.quantity)")
+} else {
+    print("Unable to initialize one unnamed product")
+}
+// 打印“Unable to initialize one unnamed product”
+```
+
 ### 重写一个可失败构造器
+
+- 在子类中重写父类的可失败构造器
+  - 用子类的非可失败构造器重写一个父类的可失败构造器
+  - 需要对父类的可失败构造器的返回值进行强制解包
+
+>  可以用非可失败构造器重写可失败构造器，但反过来却不行
+
+- 例子：属性的值必须为一个非空字符串或 `nil`
+
+```swift
+class Document {
+    var name: String?
+    // 该构造器创建了一个 name 属性的值为 nil 的 document 实例
+    init() {}
+    // 该构造器创建了一个 name 属性的值为非空字符串的 document 实例
+    init?(name: String) {
+        if name.isEmpty { return nil }
+        self.name = name
+    }
+}
+```
+
+- 子类重写了所有父类引入的指定构造器
+- 确保生成的实例中的 `name` 属性总有初始值 `"[Untitled]"`：
+
+```swift
+class AutomaticallyNamedDocument: Document {
+    override init() {
+        super.init()
+        self.name = "[Untitled]"
+    }
+    override init(name: String) {
+        super.init()
+        if name.isEmpty {
+            self.name = "[Untitled]"
+        } else {
+            self.name = name
+        }
+    }
+}
+```
+
+- 使用强制解包来调用父类的可失败构造器
+
+```swift
+class UntitledDocument: Document {
+    override init() {
+        super.init(name: "[Untitled]")!
+    }
+}
+```
+
+- 这里是通过字符串常量来调用，构造器不会失败，所以不会（强制解包）运行时错误。
+
 ### init! 可失败构造器
+
+- 可失败构造器：
+  - （`init?`）
+  - （`init!`）- 隐式解包
+- 调用：可在 init? 初始化器中委托调用 init! 初始化器，反之亦然。
+- 重写：也可以用 init! 重写 init? ，反之亦然
+- 用 init 委托调用 init!，初始化失败时会触发断言
+
 ## 必要构造器
+
+- 子类都必须实现该初始化器
+- 语法：类的构造器前添加 `required` 修饰符
+
+```swift
+class SomeClass {
+    required init() {
+        // 构造器的实现代码
+    }
+}
+```
+
+- 重写父类的必要构造器
+  - 也要添加 `required` 修饰符
+  - 重写父类**必要的指定**构造器时，不需要添加 `override` 修饰符
+
+```swift
+class SomeSubclass: SomeClass {
+    required init() {
+        // 构造器的实现代码
+    }
+}
+```
+
+> 继承的构造器满足基本使用，则无需在子类实现必要构造器
+
 ## 通过闭包或函数设置属性的默认值
 
+- 用闭包为属性提供默认值
+- 模板
+
+```swift
+class SomeClass {
+    let someProperty: SomeType = {
+        // 在这个闭包中给 someProperty 创建一个默认值
+        // someValue 必须和 SomeType 类型相同
+        return someValue
+    }()
+}
+```
+
+- 花括号后面接了一对空的小括号, 立即执行此闭包
+- 忽略小括号，将闭包本身作为值赋值给了属性
+
+>  在闭包执行时，实例的其它部分都还没有初始化
+>
+> 不能在闭包里访问其它属性，即使这些属性有默认值，也不能使用隐式的 `self` 属性，或者调用任何实例方法
+
+- 结构体 `Chessboard`，构建西洋跳棋游戏的棋盘
+
+<img src="https://docs.swift.org/swift-book/_images/chessBoard_2x.png" alt="img" style="zoom:33%;" />
+
+- 值为 `true` 的元素表示一个黑格，值为 `false` 的元素表示一个白格
+- 第一个元素代表棋盘上左上角的格子，最后一个元素代表棋盘上右下角的格子
+
+
+
+- 通过一个闭包来初始化并设置颜色值
+
+```swift
+struct Chessboard {
+    let boardColors: [Bool] = {
+        var temporaryBoard = [Bool]()
+        var isBlack = false
+        for i in 1...8 {
+            for j in 1...8 {
+                temporaryBoard.append(isBlack)
+                isBlack = !isBlack
+            }
+            isBlack = !isBlack
+        }
+        return temporaryBoard
+    }()
+    func squareIsBlackAt(row: Int, column: Int) -> Bool {
+        return boardColors[(row * 8) + column]
+    }
+}
+```
+
+```swift
+let board = Chessboard()
+print(board.squareIsBlackAt(row: 0, column: 1))
+// 打印“true”
+print(board.squareIsBlackAt(row: 7, column: 7))
+// 打印“false”
+```
+
 # 析构过程
+
+- 适用范围：class 类型
+- 析构器触发时机：实例被释放之**前**
+  - 不能主动调用
+  - 调用后，实例才会被释放，析构器可以访问实例的所有属性
+- 析构器关键字：deinit
+- 每个类最多只能有一个析构器
+- 析构器会继承，子类实现代码的最后，会被自动（隐式）调用父类的析构器（即使子类没有析构器，父类析构器也会被调用）
+
 ## 析构过程原理
+
+- Swift 也是使用*自动引用计数（ARC)* 处理实例的内存管理，实例释放不需要手动清理
+- 但使用自己的资源时，需要一些额外的清理
+- 如，文件读写
+- 语法：不带任何参数和圆括号
+
+```swift
+deinit {
+    // 执行析构过程
+}
+```
+
 ## 析构器实践
 
+- `Bank` 类管理一种虚拟硬币，确保流通的硬币数量永远不可能超过 10,000。
+
+- 使用类型属性和类型方法来存储和管理其当前状态
+
+```swift
+class Bank {
+    static var coinsInBank = 10_000
+    static func distribute(coins numberOfCoinsRequested: Int) -> Int {
+        let numberOfCoinsToVend = min(numberOfCoinsRequested, coinsInBank)
+        coinsInBank -= numberOfCoinsToVend
+        return numberOfCoinsToVend
+    }
+    static func receive(coins: Int) {
+        coinsInBank += coins
+    }
+}
+```
+
+- 玩家在任意时间都有一定数量的硬币存储在他们的钱包中
+
+```swift
+class Player {
+    var coinsInPurse: Int
+    init(coins: Int) {
+        coinsInPurse = Bank.distribute(coins: coins)
+    }
+    func win(coins: Int) {
+        coinsInPurse += Bank.distribute(coins: coins)
+    }
+    deinit {
+      // 银行回收硬币
+        Bank.receive(coins: coinsInPurse)
+    }
+}
+```
+
+```swift
+// 玩家可以随时离开游戏，设置为可选使你可以追踪玩家当前是否在游戏中
+var playerOne: Player? = Player(coins: 100)
+print("A new player has joined the game with \(playerOne!.coinsInPurse) coins")
+// 打印“A new player has joined the game with 100 coins”
+print("There are now \(Bank.coinsInBank) coins left in the bank")
+// 打印“There are now 9900 coins left in the bank”
+```
+
+- 使用感叹号（`!`）强制解包
+
+```swift
+playerOne!.win(coins: 2_000)
+print("PlayerOne won 2000 coins & now has \(playerOne!.coinsInPurse) coins")
+// 打印“PlayerOne won 2000 coins & now has 2100 coins”
+print("The bank now only has \(Bank.coinsInBank) coins left")
+// 打印“The bank now only has 7900 coins left”
+```
+
+- 玩家现在已经离开了游戏。这通过将可选类型的 `playerOne` 变量设置为 `nil` 来表示
+
+```swift
+playerOne = nil
+print("PlayerOne has left the game")
+// 打印“PlayerOne has left the game”
+print("The bank now has \(Bank.coinsInBank) coins")
+// 打印“The bank now has 10000 coins”
+```
+
+- 实例的析构器被自动调用，玩家的硬币被返还给银行
+
 # 可选链
+
+- 
+- 
+
 ## 使用可选链式调用代替强制解包
 ## 为可选链式调用定义模型类
 ## 通过可选链式调用访问属性
