@@ -5105,7 +5105,7 @@ print("AutomaticCar: \(automatic.description)")
 
 # 构造 / 初始化过程 - Initialization
 
-- 与 Objective -C 不同，Swift 的构造器没有返回值。
+- 与 Objective -C 不同，Swift 的构造器没有返回值（特殊情况，可失败构造器返回 nil）。
 
 ## 存储属性的初始赋值
 
@@ -5151,7 +5151,7 @@ struct Fahrenheit {
 
 ### 形参的构造过程
 
-- 构造形参的功能和语法跟函数和方法的形参相同。
+- 跟函数和方法的形参相同
 
 ```swift
 struct Celsius {
@@ -5170,7 +5170,7 @@ let freezingPointOfWater = Celsius(fromKelvin: 273.15)
 // freezingPointOfWater.temperatureInCelsius 是 0.0
 ```
 
-- 将单一的实参转换成摄氏温度值，并保存在属性 `temperatureInCelsius` 中。
+- 转换成摄氏温度值
 
 ### 形参命名和实参标签
 
@@ -5248,14 +5248,13 @@ cheeseQuestion.response = "Yes, I do like cheese."
 
 ### 构造过程中常量属性的赋值
 
-- 初始化方法内部，可给常量赋值
-- 一旦赋值，将不可更改
+- 初始化方法内部，可给常量赋值，一旦赋值，将不可更
 
 > 类的实例，常量属性只能在类的构造过程中修改；
 >
-> 不能在子类中修改。
+> 常量属性，不能在子类中修改。
 
-- 用常量属性替代变量属性 `text`，表示问题内容 `text` 在 `SurveyQuestion` 的实例被创建之后不会再被修改
+- 用常量属性替代变量属性 `text`，表示创建之后不会再被修改
 
 ```swift
 class SurveyQuestion {
@@ -5274,14 +5273,13 @@ beetsQuestion.ask()
 beetsQuestion.response = "I also like beets. (But not with cheese.)"
 ```
 
-## 默认构造器
+## （自动生成）默认构造器
 
 - 适用：结构体、类
 
-- 生成，默认构造器-前提条件
-  - 为所有属性提供了默认值
-  - 没有任何自定义的构造器
-- 默认构造器会创建一个所有属性值 = 默认值的实例
+- 前提条件
+  - 为所有属性有默认值
+  - 没有自定义一个构造器
 
 ```swift
 class ShoppingListItem {
@@ -5292,7 +5290,7 @@ class ShoppingListItem {
 var item = ShoppingListItem()
 ```
 
-### 结构体类型的成员初始化器 - memberwise initializer
+### 结构体类型的成员初始化器
 
 - 适用：结构体
 - 跟默认初始化器区别
@@ -5312,7 +5310,6 @@ let zeroByTwo = Size(height: 2.0)
 print(zeroByTwo.width, zeroByTwo.height)
 // 打印 "0.0 2.0"
 
-
 let zeroByZero = Size()
 print(zeroByZero.width, zeroByZero.height)
 // 打印 "0.0 0.0"
@@ -5320,11 +5317,12 @@ print(zeroByZero.width, zeroByZero.height)
 
 ## 值类型的构造器代理
 
-- 构造器代理：初始化器调用其他初始化器来执行部分实例的初始化
-- 值类型（结构体 + 枚举）构造器
+- 构造器代理：初始化器调用其他初始化器
+- 值类型构造器
   - 不支持继承
-  - 用 `self.init` 在自定义的构造器中引用相同类型中的其它构造器（只能在构造器内部调用）
-  - 对于值类型，自定义了构造器，默认构造器将会失效（如果想 默认构造器 + 逐一成员构造器 + 自定义构造器同时生效。解决：使用扩展（`extension`）自定义构造器）
+  - 用 `self.init` 在自定义构造器中引用其它构造器（内部）
+  - 对于值类型，自定义构造器，默认构造器失效
+    - 解决：使用扩展（`extension`）自定义构造器
 
 ```swift
 struct Size {
@@ -5377,23 +5375,21 @@ let originRect = Rect(origin: Point(x: 2.0, y: 2.0),
 // originRect 的 origin 是 (2.0, 2.0)，size 是 (5.0, 5.0)
 ```
 
-> 使用 扩展，可以减少 定义 init() 和 init(origin:size:) 【默认初始化器】 的代码
-
 ## 类的继承和构造过程
 
 - 类的存储属性（包括继承父类的），在初始化时，必须有默认值
-- 保证存储属性有初始值的两种构造器：
+- 保证存储属性有初始值的两构造器：
   - 指定构造器 - designated initializers
   - 便利构造器 - convenience initializers
 
 ### 指定构造器和便利构造器
 
-- 指定初始化器（主要初始化器）
-  - 一个类至少有一个（继承父类的也算）
-  - 指定初始化器，像一个漏斗，是连接父类和子类的链条
-- 便捷初始化器（次要、辅助型）
-  - 可有可无，非必须的
-  - 可调用指定初始化器 - > 初始化属性默认值
+- 指定初始化器（主要）
+  - 一个类至少有一个（继承父类也算）
+  - 像漏斗，连接父和子类的链条
+- 便捷初始化器（可选）
+  - 可有可无
+  - 可调用指定初始化器
 
 ### 指定构造器和便利构造器的语法
 
@@ -5413,54 +5409,59 @@ convenience init(parameters) {
 }
 ```
 
-### 类类型(Class Types)的构造器代理
+### class 类型的构造器代理
 
-- 指定初始化器和便利初始化器的调用关系
-  - 规则1：指定构造器必须调用（直接）父类的指定构造器
-  - 规则2：便利构造器必须调用（*同一个类的）其它构造器。
-  - 规则3：便利构造器最后必须调用指定构造器。
-- 口诀
-  - 指定初始化器 必向上委托
-  - 便利初始化器 必横向委托
-- 图解：
+- 构造器实现规则 - 指定和便利的调用关系
+  - 规则1：**子类指定**必须调用（直接）**父类的指定**
+  - 规则2：**便利**必须调用（同类）其它构造器。
+  - 规则3：**便利**构造器**最后必须**调用**指定**（间接调用也行）
+- 记忆口诀
+  - **指定**必向上调用
+  - **便利**必横向调用
+- 图解-三规则：
 
 <img src="https://www.logcg.com/wp-content/uploads/2015/08/initializerDelegation01_2x.png" alt="initializerDelegation01_2x" style="zoom:50%;" />
 
-- 父类没有自己的父类，所以规则 1 没有用到
-- 两个指定构造器必须调用父类中唯一的指定构造器，这满足了规则 1
+- 图示-父类为基类，规则 1 没用
+- 两指定必须调用父类唯一（直接）指定，满足规则 1
 
 
 
-- 更复杂的例子：演示指定初始化器在层级之间的漏斗作用
+> 3个规则，只影响构造器实现，不影响类的实例创建，上面任一构造器都可创建实例
 
-<img src="https://www.logcg.com/wp-content/uploads/2015/08/initializerDelegation02_2x.png" alt="initializerDelegation02_2x" style="zoom:50%;" />
+- 4个类的例子：
 
-### 两段式构造过程 - two-phase initialization
+<img src="https://www.logcg.com/wp-content/uploads/2015/08/initializerDelegation02_2x.png" alt="initializerDelegation02_2x" style="zoom: 50%;" />
+
+### 两段式构造过程
 
 - 类初始化两过程
-  - 第一阶段：存储属性赋初值
-  - 第二阶段：自定义存储属性的值
-- 两段式的四种安全检查：【实例非空 = 非继承属性有初始化值】
-  - 安全检查 1：向上委托父类之前，保证所有（非继承）属性初始化完成（保证实例非空）
-  - 安全检查 2：为继承属性设置新值，需要先向上委托父类初始化器（避免被覆盖）
-  - 安全检查3：便捷初始化器，先调用其他初始化器，再自定义属性新值（避免被覆盖）
-  - 安全检查4：必须等第一阶段初始化完成，才能调用实例方法、属性、self（第一阶段完成，实例才有值）
+  - 第一阶段（完成初始化）：存储属性全赋值
+  - 第二阶段（自定义操作）：自定义 存储属性值
+
+> OC 初始化多为0或 nil，Swift 初始化全赋初值
+
+- 两段式的四种安全检查：【实例非空 = 非继承属性有值】【自定义值前，避免覆盖】
+  - 安全检查 1：调用父类前，所有（非继承）属性必须赋值
+  - 安全检查 2：自定义**继承属性**值前，先调用父类初始化器（避免被覆盖）
+  - 安全检查3：便捷初始化器，先调用其他构造器，再自定义属性值（避免被覆盖）
+  - 安全检查4：第一阶段完成前，不能调用实例方法、属性、self（实例为 nil）
 - 两段式初始化 + 四种检查 详细流程：
-  - 阶段1：完成创建实例 = 指定初始化器 = 所有 子类 + 父类 存储属性都有值 
+  - 阶段1：
     - 调用（指定 / 便利）构造器
-    - 完成实例的内存分配，但内存没被初始化
+    - 完成实例的内存分配，但内存没被初始化（属性内存大小没确定）
     - 调用指定构造器，确保存储属性的内存完成初始化
     - 指定构造器，调用父类构造器，完成存储属性初始化
     - 继承链顶部，最后一类的存储实现已赋值，这个实例被认为完全初始化（阶段1完成）
   - 阶段2：（非必须）调用便利初始化器 = 自定义属性的初始化值
     - 自顶向下，继承链中的每个类，在自定义实例时，可访问 `self`、修改属性并调用实例方法等
-    - 便利构造器有机会自定义实例和使用 `self`
+    - 便利构造器可自定义实例和使用 `self`
 
-- 图解阶段1
+- 阶段1
 
 <img src="https://docs.swift.org/swift-book/_images/twoPhaseInitialization01_2x.png" alt="img" style="zoom: 50%;" />
 
-- 阶段2图解：
+- 阶段2：
 
 <img src="https://docs.swift.org/swift-book/_images/twoPhaseInitialization02_2x.png" alt="img" style="zoom:50%;" />
 
@@ -5470,14 +5471,16 @@ convenience init(parameters) {
 
 - 与 OC 不同，Swift子类不继承父类构造器。（防止父类简单初始化器被子类继承后，无法完成初始化或被错误初始化）
 
-> 特殊情况下会被继承。参考后续章节 构造器的自动继承。
+> 特殊情况会继承。
+>
+> 参考后续章节 构造器的自动继承。
 
 - 在子类可自定义与父类同名的指定初始化器（自动生成的父类初始化器，也可以重写）
   - 必须写 override 修饰符（检查父类是否有同名初始化器）
 
-> 重写指定初始化器，必须写 override 修饰符，哪怕实现的是便捷初始化器
+> 重写指定初始化器，必须写 override 修饰符，哪怕重写为 便捷初始化器
 
-- 重写便捷初始化器，不需要写 override 修饰符
+- 先写一个父类（Swift 自动创建默认（指定）构造器）
 
 ```swift
 class Vehicle {
@@ -5487,8 +5490,6 @@ class Vehicle {
     }
 }
 ```
-
-- 手动为属性赋默认值 + 没有自定义构造器 = 自动生成默认构造器（也是指定构造器）
 
 ```swift
 let vehicle = Vehicle()
@@ -5505,12 +5506,12 @@ class Bicycle: Vehicle {
 }
 ```
 
-- Bicycle 自定义指定构造器 `init()，和父类指定构造器相匹配，所以要写 override 修饰符`
-- 没有自定义 numberOfWheels = 2  ➕ 父类无参数 = 可省略 `super.init()` 的调用
+- Bicycle 自定义指定构造器 `init()`，和父类指定构造器相匹配，所以要写 override 修饰符
+- 若 没有自定义 numberOfWheels = 2  && 父类无参数 = 可省略 `super.init()` 的调用
 
 
 
-- 隐私调用 super.init()
+- 隐式调用 super.init()（确保父类能完整初始化）
 
 ```swift
 class Hoverboard: Vehicle {
@@ -5525,24 +5526,29 @@ class Hoverboard: Vehicle {
 }
 ```
 
-> 子类只能修改继承的变量属性，不能修改常量属性
+> 继承来的属性，子类只能修改变量，不能修改常量
 
 ### 构造器的自动继承
 
-- 默认情况，子类不继承父类构造器。
-- 满足条件会自动继承 
-  - 自动继承**所有**指定初始化器：
-    - 子类全部**新**属性有默认值 + 子类没写**指定**构造器（便利构造器除外）
-  - 自动继承**所有**便捷初始化器：
-    - 在子类实现/调用了所有父类指定初始化器（包括 继承的实现 、自定义的实现）
+- 默认情况，不继承父类构造器。
+- 自动继承的前提： （记忆：属性全值；没指定，全指定；全指定，全便捷）
+  - 子类所有新属性有默认值
+    - 继承**所有**指定：
+      - 没有自定义**指定**构造器（便利除外）
+    - 继承**所有**便利：
+      - 实现了父类所有指定（继承的 、自定义的实现）
+
+
+
+- 综上，属性全值 + 不自定义 = 继承全部的 指定 + 便利
 
 > 子类可以将父类的指定构造器实现为便利构造器来满足规则 2
 
 ### 指定构造器和便利构造器实践
 
-- 例子定义了包含三个类 `Food`、`RecipeIngredient` 以及 `ShoppingListItem` 的层级结构
+- 定义三个类 `Food`、`RecipeIngredient` 以及 `ShoppingListItem` 
 
-- `Food` 类引入了一个叫做 `name` 的 `String` 类型的属性，并且提供了两个构造器来创建 `Food` 实例
+- `Food` 引入一 `name` 的 `String` 类型的属性，两个构造器创建 `Food` 实例
 
 ```swift
 class Food {
@@ -5551,28 +5557,25 @@ class Food {
         self.name = name
     }
 
-
     convenience init() {
         self.init(name: "[Unnamed]")
     }
 }
 ```
 
-- 图解 Food 类的初始化链
+-  Food 类初始化链
 
 ![img](https://docs.swift.org/swift-book/_images/initializersExample01_2x.png)
 
-- class 没有逐一成员构造器，`Food` 类提供了一个接受单一参数 `name` 的指定构造器
+- class 没有逐一成员构造器，`Food` 类提供一个接受单一参数 `name` 的指定构造器
 
 ```swift
 let namedMeat = Food(name: "Bacon")
 // namedMeat 的名字是 "Bacon"
 ```
 
-- 能确保 `Food` 实例所有存储属性被初始化 = `init(name: String)` 被定义为指定构造器
-- `Food` 类没有父类 = 不需要调用 `super.init()`
-
-- 便利构造器 `init()`，横向代理到指定构造器 `init(name: String)` 并给参数 `name` 赋值为 `[Unnamed]` 来实现
+-  `init(name: String)` 确保 `Food` 所有存储属性有值 = 指定构造器
+- `Food` 没父类 ，无需调用 `super.init()`
 
 
 
@@ -5595,12 +5598,10 @@ class RecipeIngredient: Food {
 
 <img src="https://docs.swift.org/swift-book/_images/initializersExample02_2x.png" alt="img" style="zoom:50%;" />
 
-- 指定构造器 `init(name: String, quantity: Int)`，填充 `RecipeIngredient` 实例的所有属性值
+- 指定构造器 `init(name: String, quantity: Int)`，给`RecipeIngredient` 所有属性赋值
 
-- 将父类的指定构造器重写为了便利构造器，`RecipeIngredient` 自动继承所有便利构造器
-  - 便利构造器重写了**同名**父类的指定构造器 `init(name: String)`，用 `override` 修饰符
+- 将父类同名的指定重写为了便利，`RecipeIngredient` 自动继承所有便利构造器 `init()`
 
-- 三种构造器都可以用来创建新的 `RecipeIngredient` 实例：
 
 ```swift
 let oneMysteryItem = RecipeIngredient()
@@ -5621,7 +5622,7 @@ class ShoppingListItem: RecipeIngredient {
 }
 ```
 
-- 因属性都有默认值，没定义任何构造器，将自动继承父类指定 + 便利 构造器
+- 属性都有值 + 没定义构造器 = 继承父类 指定 + 便利 构造器
 
 <img src="https://docs.swift.org/swift-book/_images/initializersExample03_2x.png" alt="img" style="zoom:50%;" />
 
@@ -5645,9 +5646,9 @@ for item in breakfastList {
 
 - 组的类型也能被自动推导为 `[ShoppingListItem]`。
 
-## 可失败构造器 - Failable Initializers
+## 可失败构造器
 
-- 语法：在 `init` 关键字后面添加问号（`init?`）
+- 语法：在 `init` 后面添加问号（`init?`）
 - 类型：为自身类型的可选类型的对象
 
 > 禁止可失败和非可失败的初始化器为相同参数类型和名称
@@ -5745,8 +5746,6 @@ enum TemperatureUnit {
 }
 ```
 
-- 使用
-
 ```swift
 let fahrenheitUnit = TemperatureUnit(symbol: "F")
 if fahrenheitUnit != nil {
@@ -5785,16 +5784,11 @@ if unknownUnit == nil {
 
 ### 构造失败的传递
 
-- 可失败初始化器可横向委托到同一个类
-- 子类的可失败初始化器可以向上委托到父类的可失败初始化器
-
 - 代理到的其他可失败构造器触发构造失败，整个构造过程将立即终止，接下来的任何构造代码不会再被执行
 
 >  可失败构造器也，可代理到其它的不可失败构造器
 >
 > 为已有的初始化过程添加初始化失败的条件
-
-
 
 ```swift
 class Product {
@@ -5817,7 +5811,7 @@ class CartItem: Product {
 
 - 若 `quantity` 值无效，则立即终止整个构造过程
 
-- 成功使用
+- 成功创建
 
 ```swift
 if let twoSocks = CartItem(name: "sock", quantity: 2) {
@@ -5850,11 +5844,11 @@ if let oneUnnamed = CartItem(name: "", quantity: 1) {
 
 ### 重写一个可失败构造器
 
-- 在子类中重写父类的可失败构造器
-  - 用子类的非可失败构造器重写一个父类的可失败构造器
-  - 需要对父类的可失败构造器的返回值进行强制解包
+- 子类重写父类可失败:
+  - 子类非失败重写父类可失败
+  - 需对父类可失败返回值强制解包
 
->  可以用非可失败构造器重写可失败构造器，但反过来却不行
+>  非失败重写可失败，但反过来却不行
 
 - 例子：属性的值必须为一个非空字符串或 `nil`
 
@@ -5912,7 +5906,7 @@ class UntitledDocument: Document {
 - 重写：也可以用 init! 重写 init? ，反之亦然
 - 用 init 委托调用 init!，初始化失败时会触发断言
 
-## 必要构造器
+## 必要(实现)构造器
 
 - 子类都必须实现该初始化器
 - 语法：类的构造器前添加 `required` 修饰符
@@ -5926,7 +5920,7 @@ class SomeClass {
 ```
 
 - 重写父类的必要构造器
-  - 也要添加 `required` 修饰符
+  - 要添加 `required` 修饰符
   - 重写父类**必要的指定**构造器时，不需要添加 `override` 修饰符
 
 ```swift
@@ -5941,7 +5935,6 @@ class SomeSubclass: SomeClass {
 
 ## 通过闭包或函数设置属性的默认值
 
-- 用闭包为属性提供默认值
 - 模板
 
 ```swift

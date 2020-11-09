@@ -108,4 +108,9 @@ Person.sayHi()
 print("name = \(person["Sunday"])")
 print("--------------------")
 
-
+//class Student: Person {
+//    override final func desccription() { // Instance method overrides a 'final' instance method
+//        print("age = \(age)")
+//        print("--------------------")
+//    }
+//}
