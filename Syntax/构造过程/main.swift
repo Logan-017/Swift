@@ -416,5 +416,3 @@ print(board.squareIsBlackAt(row: 0, column: 1))
 print("--------------------")
 print(board.squareIsBlackAt(row: 7, column: 7))
 print("--------------------")
-
-
