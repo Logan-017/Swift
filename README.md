@@ -1,8 +1,6 @@
-
-
 # 简介
 
-- Swift 学习笔记 + 练习代码。
+- Swift 学习笔记 + 练习代码
 
 - 参考资料：
   - [Swift 官方文档](https://docs.swift.org/swift-book/)
@@ -6086,23 +6084,340 @@ print("The bank now has \(Bank.coinsInBank) coins")
 
 - 实例的析构器被自动调用，玩家的硬币被返还给银行
 
-# 可选链
+# 可选(类型)链
 
-- 
-- 
+- 本质：安全解包 + 方法调用（属性读写、方法调用、脚标读写）
+
+- 应用：检查（可选 属性、方法、下标）调用过程是否为 nil
+  - 非 nil：返回 T？，继续执行后面的代码
+  - 是 nil，调用失败，立即返回 nil
+- 多个可选链可连接使用，一个节点为 nil ，整个调用链失败，返回 nil
+
+> Swift 可选链 ≈ OC 的向 nil 发送消息类似
+>
+> 区别：Swift 调用失败会返回 nil，**做判断**检查
 
 ## 使用可选链式调用代替强制解包
-## 为可选链式调用定义模型类
-## 通过可选链式调用访问属性
-## 通过可选链式调用来调用方法
-## 通过可选链式调用访问下标
+
+- 语法：在想调用的属性、方法，或下标的可选值后面放一个问号（`?`）
+
+- 场景
+  - 解决强制解包弊端：可选值为空时，触发运行时错误
+
+- 可选链返回类型：原本类型 + 一层可选包装 
+  - 如：非可选链成功返回 Int，可选链返回 Int?
+
+```swift
+class Person {
+    var residence: Residence?
+}
+
+class Residence {
+    var numberOfRooms = 1
+}
+```
+
+- `john` 有一个值为 `nil` 的 `residence` 属性：（可选类型属性初始化为 nil）
+
+```swift
+let john = Person()
+```
+
+```swift
+let roomCount = john.residence!.numberOfRooms
+// 这会引发运行时错误
+```
+
+```swift
+if let roomCount = john.residence?.numberOfRooms {
+    print("John's residence has \(roomCount) room(s).")
+} else {
+    print("Unable to retrieve the number of rooms.")
+}
+// 打印“Unable to retrieve the number of rooms.”
+```
+
+```swift
+john.residence = Residence()
+```
+
+```swift
+// numberOfRooms为费可选 Int, 使用了可选链,变为返回 Int?，所以需要解包后调用
+if let roomCount = john.residence?.numberOfRooms {
+    print("John's residence has \(roomCount) room(s).")
+} else {
+    print("Unable to retrieve the number of rooms.")
+}
+// 打印“John's residence has 1 room(s).”
+```
+
+## 为可选链调用定义模型类
+
+- 在复杂的模型中向下访问各种子属性，并且判断能否访问子属性的属性、方法和下标。
+
+```swift
+class Person {
+    var residence: Residence?
+}
+```
+
+- 增加了一个名为 `rooms` 的变量属性
+
+```swift
+class Residence {
+    var rooms = [Room]()
+    var numberOfRooms: Int {
+        return rooms.count
+    }
+    subscript(i: Int) -> Room {
+        get {
+            return rooms[i]
+        }
+        set {
+            rooms[i] = newValue
+        }
+    }
+    func printNumberOfRooms() {
+        print("The number of rooms is \(numberOfRooms)")
+    }
+    var address: Address?
+}
+```
+
+```swift
+class Room {
+    let name: String
+    init(name: String) { self.name = name }
+}
+```
+
+```swift
+class Address {
+    var buildingName: String?
+    var buildingNumber: String?
+    var street: String?
+    func buildingIdentifier() -> String? {
+        if buildingName != nil {
+            return buildingName
+        } else if let buildingNumber = buildingNumber, let street = street {
+            return "\(buildingNumber) \(street)"
+        } else {
+            return nil
+        }
+    }
+}
+```
+
+
+
+## 通过可选链访问属性
+
+- 通过可选链式调用在一个可选值上，访问它的属性，并判断访问是否成功
+
+```swift
+let john = Person()
+if let roomCount = john.residence?.numberOfRooms {
+    print("John's residence has \(roomCount) room(s).")
+} else {
+    print("Unable to retrieve the number of rooms.")
+}
+// 打印“Unable to retrieve the number of rooms.”
+```
+
+- `john.residence` 为 `nil`，所以这个可选链式调用依旧会像先前一样失败。
+
+
+
+- 通过可选链式调用来设置属性值：
+
+```swift
+let someAddress = Address()
+someAddress.buildingNumber = "29"
+someAddress.street = "Acacia Road"
+john.residence?.address = someAddress
+```
+
+- 可选链式调用失败时，等号右侧的代码不会被执行
+
+
+
+- 验证等号右侧的代码是否被执行。
+
+```swift
+func createAddress() -> Address {
+    print("Function was called.")
+
+
+    let someAddress = Address()
+    someAddress.buildingNumber = "29"
+    someAddress.street = "Acacia Road"
+
+
+    return someAddress
+}
+john.residence?.address = createAddress()
+```
+
+- 没有任何打印消息，可以看出 `createAddress()` 函数并未被执行。
+
+## 通过可选链调用方法
+
+- 调用方法，并判断方法调用成功
+  - 无返回值的方法，调用成功，隐式返回`Void`类型，本质是一个空元组 `()`
+
+```swift
+public typealias Void = ()
+```
+
+- 可选链-调用【无返回值】方法
+  - 成功：返回类 `Void?` 
+  - 失败：返回 nil
+
+> 过可选链式调用得到的返回值都是可选的
+
+```swift
+if john.residence?.printNumberOfRooms() != nil {
+    print("It was possible to print the number of rooms.")
+} else {
+    print("It was not possible to print the number of rooms.")
+}
+// 打印“It was not possible to print the number of rooms.”
+```
+
+- 通过可选链式调用给属性赋值会返回 `Void?`，通过判断返回值是否为 `nil` 就可以知道赋值是否成功：
+
+```swift
+if (john.residence?.address = someAddress) != nil {
+    print("It was possible to set the address.")
+} else {
+    print("It was not possible to set the address.")
+}
+// 打印“It was not possible to set the address.”
+```
+
+## 通过可选链访问下标
+
+- 在一个可选值上访问下标，且判断下标调用是否成功。
+
+> 将问号放在下标方括号的前面而不是后面
+>
+> 可选链式调用的问号一般直接跟在可选表达式的后面
+
+```swift
+if let firstRoomName = john.residence?[0].name {
+    print("The first room name is \(firstRoomName).")
+} else {
+    print("Unable to retrieve the first room name.")
+}
+// 打印“Unable to retrieve the first room name.”
+```
+
+- 问号直接放在 `john.residence` 的后面，并且在方括号的前面，因为 `john.residence` 是可选值
+
+```swift
+john.residence?[0] = Room(name: "Bathroom")
+```
+
+- 赋值同样会失败，因为 `residence` 目前是 `nil`。
+
+```swift
+let johnsHouse = Residence()
+johnsHouse.rooms.append(Room(name: "Living Room"))
+johnsHouse.rooms.append(Room(name: "Kitchen"))
+john.residence = johnsHouse
+
+if let firstRoomName = john.residence?[0].name {
+    print("The first room name is \(firstRoomName).")
+} else {
+    print("Unable to retrieve the first room name.")
+}
+// 打印“The first room name is Living Room.”
+```
+
 ### 访问可选类型的下标
+
+- 在下标的结尾括号后面放一个问号，来在其可选返回值上进行可选链式调用
+
+```swift
+var testScores = ["Dave": [86, 82, 84], "Bev": [79, 94, 81]]
+testScores["Dave"]?[0] = 91
+testScores["Bev"]?[0] += 1
+testScores["Brian"]?[0] = 72
+// "Dave" 数组现在是 [91, 82, 84]，"Bev" 数组现在是 [80, 94, 81]
+```
+
 ## 连接多层可选链式调用
+
+多层可选链式调用不会增加返回值的可选层级
+
+- 访问的值不是可选的，可选链式调用返回可选值。
+  - 可选链式调用访问一个 `Int` 值，返回 `Int?`，无论多少层可选链式调用
+- 访问的值是可选，可选链式调用不会让可选返回值变得“更可选”。
+  - 可选链式调用访问 `Int?` 值，依旧会返回 `Int?` 值，并不会返回 `Int??`
+
 ## 在方法的可选返回值上进行可选链式调用
 
+```swift
+if let beginsWithThe =
+    john.residence?.address?.buildingIdentifier()?.hasPrefix("The") {
+        if beginsWithThe {
+            print("John's building identifier begins with \"The\".")
+        } else {
+            print("John's building identifier does not begin with \"The\".")
+        }
+}
+// 打印“John's building identifier begins with "The".”
+```
+
+> 在 `buildingIdentifier()` 方法的可选返回值上进行可选链式调用，而不是 `buildingIdentifier()` 方法本身
+
 # 错误处理
+
+- Swift 在运行时提供了抛出、捕获、传递和操作可恢复错误（recoverable errors）的一等支持（first-class support）
+- 区分这些不同的失败情况可以让程序处理并解决某些错误，然后把它解决不了的错误报告给用户
+
+> 
+>
+>  Swift 中的错误处理涉及到错误处理模式，这会用到 Cocoa 和 Objective-C 中的 `NSError`。更多详情参见 [用 Swift 解决 Cocoa 错误](https://developer.apple.com/documentation/swift/cocoa_design_patterns/handling_cocoa_errors_in_swift)。
+
 ## 表示与抛出错误
+
+- 在 Swift 中，错误用遵循 `Error` 协议的类型的值来表示
+- 这个空协议表明该类型可以用于错误处理。
+
+
+
+- 枚举类型适合构建一组相关的错误状态，关联值还可以提供错误状态的额外信息。
+- 游戏中操作自动贩卖机
+
+```swift
+enum VendingMachineError: Error {
+    case invalidSelection                     //选择无效
+    case insufficientFunds(coinsNeeded: Int) //金额不足
+    case outOfStock                             //缺货
+}
+```
+
+- 抛出一个错误，提示贩卖机还需要 `5` 个硬币：
+
+```
+throw VendingMachineError.insufficientFunds(coinsNeeded: 5)
+```
+
 ## 处理错误
+
+- 部分代码必须负责处理错误，如纠正这个问题、尝试另一种方式、或向用户报告错误。
+
+- Swift `4` 种处理错误的方式
+  - 传递给调用此函数的代码
+  - 用 `do-catch` 语句处理错误
+  - 将错误作为可选类型处理
+  - 断言此错误根本不会发生
+- 定位错误抛出的位置
+  - 在调用一个能抛出错误的函数、方法或者构造器之前，加上 `try` 关键字，或者 `try?` 或 `try!` 这种变体
+
+> 
+
 ### 用 throwing 函数传递错误
 ### 用 Do-Catch 处理错误
 ### 将错误转换成可选值
