@@ -3581,7 +3581,7 @@ enum ASCIIControlCharacter: Character {
 
 
 
-- 整型原始值：隐式赋值为依次递增 `1`。（第一个枚举成员没有被手动赋值，原始值将为 `0`。）
+- 【整型】原始值：隐式赋值为依次递增 `1`。（第一个枚举成员没有被手动赋值，原始值将为 `0`。）
 
 - 利用整型的原始值来表示每个行星在太阳系中的顺序
 
@@ -3599,7 +3599,7 @@ for planetNum in Planet.allCases {
 
 
 
-- 字符串类型原始值：隐式原始值 = 枚举成员名称
+- 【字符串类型】原始值：隐式原始值 = 枚举成员名称
 
 ```swift
 enum CompassPoint: String, CaseIterable {
@@ -6416,15 +6416,237 @@ throw VendingMachineError.insufficientFunds(coinsNeeded: 5)
 - 定位错误抛出的位置
   - 在调用一个能抛出错误的函数、方法或者构造器之前，加上 `try` 关键字，或者 `try?` 或 `try!` 这种变体
 
-> 
+> 和其他语言中（包括 Objective-C ）的异常处理不同的是，Swift 中的错误处理并不涉及解除调用栈，这是一个计算代价高昂的过程。就此而言，`throw` 语句的性能特性是可以和 `return` 语句相媲美的。
 
 ### 用 throwing 函数传递错误
+
+- 方法、函数抛出错误能力：
+  - 在函数声明的参数之后加上 `throws` 关键字
+  - 函数指明返回值类型，`throws` 需写在返回箭头（`->`）前面
+
+```swift
+func canThrowErrors() throws -> String
+
+func cannotThrowErrors() -> String
+```
+
+- 标有 `throws` 关键字的函数被称作 *throwing 函数*
+-  throwing 函数可以在其内部抛出错误，并将错误传递到函数被调用时的作用域
+
+> 只有 throwing 函数可以传递错误。
+>
+> 在非 throwing 函数内部抛出的错误，只能在函数内部处理。
+
+
+
+- 如果请求的物品不存在、缺货或者投入金额小于物品价格，该方法就会抛出一个相应的 `VendingMachineError`：
+
+```swift
+struct Item {
+    var price: Int
+    var count: Int
+}
+
+class VendingMachine {
+    var inventory = [
+        "Candy Bar": Item(price: 12, count: 7),
+        "Chips": Item(price: 10, count: 4),
+        "Pretzels": Item(price: 7, count: 11)
+    ]
+    var coinsDeposited = 0
+
+    func vend(itemNamed name: String) throws {
+        guard let item = inventory[name] else {
+            throw VendingMachineError.invalidSelection
+        }
+
+        guard item.count > 0 else {
+            throw VendingMachineError.outOfStock
+        }
+
+        guard item.price <= coinsDeposited else {
+            throw VendingMachineError.insufficientFunds(coinsNeeded: item.price - coinsDeposited)
+        }
+
+        coinsDeposited -= item.price
+
+        var newItem = item
+        newItem.count -= 1
+        inventory[name] = newItem
+
+        print("Dispensing \(name)")
+    }
+}
+```
+
+- 使用了 `guard` 语句来确保在购买某个物品所需的条件中有任一条件不满足时，提前退出方法并抛出相应的错误
+
 ### 用 Do-Catch 处理错误
+
+- 捕捉： do-catch 语句
+- 匹配：catch 语句
+
+```swift
+do {
+    try expression
+    statements
+} catch pattern 1 {
+    statements
+} catch pattern 2 where condition {
+    statements
+} catch pattern 3, pattern 4 where condition {
+    statements
+} catch {
+    statements
+}
+```
+
+- catch 不指定模式 = 匹配任何错误 + 赋值 error 局部常量
+
+```swift
+var vendingMachine = VendingMachine()
+vendingMachine.coinsDeposited = 8
+do {
+    try buyFavoriteSnack(person: "Alice", vendingMachine: vendingMachine)
+    print("Success! Yum.")
+} catch VendingMachineError.invalidSelection {
+    print("Invalid Selection.")
+} catch VendingMachineError.outOfStock {
+    print("Out of Stock.")
+} catch VendingMachineError.insufficientFunds(let coinsNeeded) {
+    print("Insufficient funds. Please insert an additional \(coinsNeeded) coins.")
+} catch {
+    print("Unexpected error: \(error).")
+}
+// 打印“Insufficient funds. Please insert an additional 2 coins.”
+```
+
+
+
+- 不匹配的错误
+  - 不抛出错误的函数：
+    - 内部必须用 `do-catch` 语句处理错误
+  - 能抛出错误的函数：
+    - 可内部用 `do-catch` 语句处理
+    - 可让上一层的调用方处理
+    - 传递到顶层作用域，没被处理，运行时错误
+
+
+
+- 错误会在调用函数的地方被捕获：
+
+```swift
+func nourish(with item: String) throws {
+    do {
+        try vendingMachine.vend(itemNamed: item)
+    } catch is VendingMachineError {
+        print("Couldn't buy that from the vending machine.")
+    }
+}
+
+do {
+    try nourish(with: "Beet-Flavored Chips")
+} catch {
+    print("Unexpected non-vending-machine-related error: \(error)")
+}
+// 打印“Couldn't buy that from the vending machine.”
+```
+
+- 另一种写法：捕获多个相关错误的方式
+- 放在 `catch` 后，通过逗号分隔
+
+```swift
+func eat(item: String) throws {
+    do {
+        try vendingMachine.vend(itemNamed: item)
+    } catch VendingMachineError.invalidSelection, VendingMachineError.insufficientFunds, VendingMachineError.outOfStock {
+        print("Invalid selection, out of stock, or not enough money.")
+    }
+}
+```
+
+- 三个错误中任意一个抛出，这个 `catch` 代码块就会打印信息。其他错误会传递到外面的作用域
+
 ### 将错误转换成可选值
+
+- 使用 `try?` 通过将错误 error 转换成一个可选值 
+  - 抛出错误：返回 nil
+  - 正常执行：返回值的 可选类型
+- 在下面的代码中，`x` 和 `y` 是等价的：
+
+```swift
+func someThrowingFunction() throws -> Int {
+    // ...
+}
+
+let x = try? someThrowingFunction()
+
+let y: Int?
+do {
+    y = try someThrowingFunction()
+} catch {
+    y = nil
+}
+```
+
+- 用 `try?`可让代码变简洁
+- 用几种方式来获取数据，如果所有方式都失败了则返回 `nil`。
+
+```swift
+func fetchData() -> Data? {
+    if let data = try? fetchDataFromDisk() { return data }
+    if let data = try? fetchDataFromServer() { return data }
+    return nil
+}
+```
+
 ### 禁用错误传递
+
+- 本质： try？的强制解包
+- 已知某个 `throwing` 函数运行时不会抛出错误
+
+- 前提：保证无错误抛出，否则运行时报错
+- 在表达式前面写 `try!`
+
+```swift
+let photo = try! loadImage(atPath: "./Resources/John Appleseed.jpg")
+```
+
 ## 指定清理操作
 
+- 使用 defer 延迟操作语句
+
+- **代码块结束前**执行必须要的清理工作
+  - 不限制结束代码块方式：如抛出错误、 `return`、`break` 等语句
+
+-  defer 语句不能包含控制转移语句
+  - 如 `break`、`return` 语句，或是抛出一个错误
+- 多个 defer 语句执行顺序（先进后出）
+  - 按照它们声明的顺序从后往前执行——也就是说，第一条 `defer` 语句中的代码最后才执行，第二条 `defer` 语句中的代码倒数第二个执行，以此类推。最后一条语句会第一个执行。
+
+- 保证文件描述符都关闭并且手动指定的内存到被释放
+
+```swift
+func processFile(filename: String) throws {
+    if exists(filename) {
+        let file = open(filename)
+        defer {
+            close(file)
+        }
+        while let line = try file.readline() {
+            // 处理文件。
+        }
+        // close(file) 会在这里被调用，即作用域的最后。
+    }
+}
+```
+
+- 用一条 `defer` 语句来确保 `open(_:)` 函数有一个相应的对 `close(_:)` 函数的调用
+
 # 类型转换
+
+
+
 ## 为类型转换定义类层次
 ## 检查类型
 ## 向下转型
