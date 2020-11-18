@@ -1,3 +1,5 @@
+
+
 # 简介
 
 - Swift 学习笔记 + 练习代码
@@ -3027,8 +3029,6 @@ func backward(_ s1: String, _ s2: String) -> Bool {
 var reversedNames = names.sorted(by: backward)
 // reversedNames 为 ["Ewa", "Daniella", "Chris", "Barry", "Alex"]
 ```
-
-### 闭包表达式语法
 
 ### 闭包表达式语法
 
@@ -6643,17 +6643,212 @@ func processFile(filename: String) throws {
 
 - 用一条 `defer` 语句来确保 `open(_:)` 函数有一个相应的对 `close(_:)` 函数的调用
 
+>  没有涉及到错误处理的代码，也可以使用 `defer` 语句。
+
 # 类型转换
 
-
+- 使用场景：
+  - 判断实例的类型 
+  - 转换实例的类型
+- 检查类型： `is` 
+- 转换类型： `as` 
+- 检查是否遵循某个协议
 
 ## 为类型转换定义类层次
+
+- 在类和子类的层次结构上，检查特定类实例的类型并且转换这个类实例的类型成为这个层次结构中的其他类型。
+- 基类 `MediaItem`。这个类为任何出现在数字媒体库的媒体项提供基础功能
+
+```swift
+class MediaItem {
+    var name: String
+    init(name: String) {
+        self.name = name
+    }
+}
+```
+
+```swift
+class Movie: MediaItem {
+    var director: String
+    init(name: String, director: String) {
+        self.director = director
+        super.init(name: name)
+    }
+}
+
+class Song: MediaItem {
+    var artist: String
+    init(name: String, artist: String) {
+        self.artist = artist
+        super.init(name: name)
+    }
+}
+```
+
+- Swift 的类型检测器能够推断出 `Movie` 和 `Song` 有共同的父类 `MediaItem`，所以它推断出 `[MediaItem]` 类作为 `library` 的类型：
+
+```swift
+let library = [
+    Movie(name: "Casablanca", director: "Michael Curtiz"),
+    Song(name: "Blue Suede Shoes", artist: "Elvis Presley"),
+    Movie(name: "Citizen Kane", director: "Orson Welles"),
+    Song(name: "The One And Only", artist: "Chesney Hawkes"),
+    Song(name: "Never Gonna Give You Up", artist: "Rick Astley")
+]
+// 数组 library 的类型被推断为 [MediaItem]
+```
+
+- `library` 里存储的媒体项依然是 `Movie` 和 `Song` 类型的
+- 遍历取出的实例会是 `MediaItem` 类型的，而不是 `Movie` 和 `Song` 类型
+
 ## 检查类型
-## 向下转型
+
+- *操作符*（`is`）：检查一个实例是否属于特定子类型
+- 属于子类型，返回 `true`，否则返回 `false`
+
+```swift
+var movieCount = 0
+var songCount = 0
+
+for item in library {
+    if item is Movie {
+        movieCount += 1
+    } else if item is Song {
+        songCount += 1
+    }
+}
+
+print("Media library contains \(movieCount) movies and \(songCount) songs")
+// 打印“Media library contains 2 movies and 3 songs”
+```
+
+
+
+## 向下转(子类)型
+
+- 用*类型转换操作符*（`as?` 或 `as!`）向下转到它的子类型
+
+- 条件形式 `as?` 返回向下转型的可选值，转型失败，返回 nil
+- 强制形式 `as!` ，在 `as?`  继承上进行强制解包，失败触发运行时错误。
+
+
+
+- 事前你不知道每个 `item` 的真实类型，所以这里使用条件形式的类型转换（`as?`）去检查
+
+```swift
+for item in library {
+    if let movie = item as? Movie {
+        print("Movie: \(movie.name), dir. \(movie.director)")
+    } else if let song = item as? Song {
+        print("Song: \(song.name), by \(song.artist)")
+    }
+}
+
+
+// Movie: Casablanca, dir. Michael Curtiz
+// Song: Blue Suede Shoes, by Elvis Presley
+// Movie: Citizen Kane, dir. Orson Welles
+// Song: The One And Only, by Chesney Hawkes
+// Song: Never Gonna Give You Up, by Rick Astley
+```
+
+> 注意
+>
+> 转换没有真的改变实例或它的值。根本的实例保持不变；只是简单地把它作为它被转换成的类型来使用。
+
 ## Any 和 AnyObject 的类型转换
 
+- 使用场景：为不确定类型提供了两种特殊的类型别名
+  - 如新建一个存放数据的数组；
+  - 网络获取的不确定类型的数据
+
+- `Any` 可以表示任何类型，包括函数类型
+- `AnyObject` 表示任何类（class）类型的实例
+
+
+
+- 用 `Any` 类型来和混合的不同类型一起工作
+
+```swift
+var things = [Any]()
+
+things.append(0)
+things.append(0.0)
+things.append(42)
+things.append(3.14159)
+things.append("hello")
+things.append((3.0, 5.0))
+things.append(Movie(name: "Ghostbusters", director: "Ivan Reitman"))
+things.append({ (name: String) -> String in "Hello, \(name)" })
+```
+
+- 可在 `switch` 表达式的 `case` 中，用 `is` 和 `as` 找出 `Any` 或 `AnyObject` 类型的常量或变量的具体类型
+
+```swift
+    case is Double:
+        print("some other double value that I don't want to print")
+    case let someString as String:
+```
+
+- 确定 any 类型数组元素的真实类型
+
+```swift
+for thing in things {
+    switch thing {
+    case 0 as Int:
+        print("zero as an Int")
+    case 0 as Double:
+        print("zero as a Double")
+    case let someInt as Int:
+        print("an integer value of \(someInt)")
+    case let someDouble as Double where someDouble > 0:
+        print("a positive double value of \(someDouble)")
+    case is Double:
+        print("some other double value that I don't want to print")
+    case let someString as String:
+        print("a string value of \"\(someString)\"")
+    case let (x, y) as (Double, Double):
+        print("an (x, y) point at \(x), \(y)")
+    case let movie as Movie:
+        print("a movie called \(movie.name), dir. \(movie.director)")
+    case let stringConverter as (String) -> String:
+        print(stringConverter("Michael"))
+    default:
+        print("something else")
+    }
+}
+
+// zero as an Int
+// zero as a Double
+// an integer value of 42
+// a positive double value of 3.14159
+// a string value of "hello"
+// an (x, y) point at 3.0, 5.0
+// a movie called Ghostbusters, dir. Ivan Reitman
+// Hello, Michael
+```
+
+> 注意
+>
+> `Any` 类型可表示所有类型的值，包括可选类型。
+>
+> Swift 会在你用 `Any` 类型来表示一个可选值的时候，给你一个警告。
+>
+> 如果你确实想使用 `Any` 类型来承载可选值，你可以使用 `as` 操作符**显式转换**为 `Any`，如下所示：
+
+```swift
+let optionalNumber: Int? = 3
+things.append(optionalNumber)        // 警告
+things.append(optionalNumber as Any) // 没有警告
+```
+
 # 嵌套类型
+
 ## 嵌套类型实践
+
+
+
 ## 引用嵌套类型
 
 # 扩展
