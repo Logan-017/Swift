@@ -4364,8 +4364,6 @@ print(someStructure.$someNumber)
 
 - 使用 s.$someNumber 来访问包装的映射值。在保存一个小数字比如四之后，s.$someNumber 的值是 false 。总之，在尝试保存一个过大的数字时映射的值就是true 了，比如 55.
 
-
-
 ```swift
 enum Size {
     case small, large
@@ -6912,16 +6910,254 @@ let heartsSymbol = BlackjackCard.Suit.hearts.rawValue
 // 红心符号为“♡”
 ```
 
-# 扩展
+# 扩展 - Extensions
+
+- 适用：结构体、枚举、枚举、协议
+- 使用场景
+  - 增加
+    - 计算属性（实例和类）【不能扩充存储属性】
+    - 方法（实例或）
+    - 构造器
+    - 下标
+    - 嵌套类型
+  - 协议
+    - 遵循（conform）协议
+    - 实现协议方法
+
+> 注意
+>
+> 扩展可以给一个类型添加新的功能，但是不能重写已经存在的功能。
+
 ## 扩展的语法
+
+```swift
+extension SomeType {
+  // 在这里给 SomeType 添加新的功能
+}
+```
+
+- 充一个现有的类型，给它添加一个或多个协议
+
+```swift
+extension SomeType: SomeProtocol, AnotherProtocol {
+  // 协议所需要的实现写在这里
+}
+```
+
+> 注意
+>
+> 现有的类型通过扩展，添加新的功能，所有实例都可用新功能（包括扩展之前创建的）。
+
 ## 计算型属性
+
+- 给 Swift 内建的 `Double` 类型添加了五个**计算型实例属性**，从而提供与距离单位相关工作的基本支持
+
+```swift
+extension Double {
+    var km: Double { return self * 1_000.0 }
+    var m: Double { return self }
+    var cm: Double { return self / 100.0 }
+    var mm: Double { return self / 1_000.0 }
+    var ft: Double { return self / 3.28084 } // 一米有 3.28084 英尺
+}
+let oneInch = 25.4.mm
+print("One inch is \(oneInch) meters")
+// 打印“One inch is 0.0254 meters”
+let threeFeet = 3.ft
+print("Three feet is \(threeFeet) meters")
+// 打印“Three feet is 0.914399970739201 meters”
+```
+
+- 只读计算属性，表达式不包含 `get` 关键字
+
+```swift
+let aMarathon = 42.km + 195.m
+print("A marathon is \(aMarathon) meters long")
+// 打印“A marathon is 42195.0 meters long”
+```
+
+> 注意 
+>
+> - 扩展可添加新的计算属性
+>
+> - 不能添加存储属性
+>
+> - 不能向现有的属性添加属性观察者。
+
 ## 扩展构造器
+
+- 指定构造器 + 析构器，必须始终由类的原始实现提供
+  - 能添加便利构造器
+  - 不能添加指定构造器
+- 使用扩展添加构造器，新的构造器用 self 调用另一个构造器，不能使用 self
+
+```swift
+struct Size {
+    var width = 0.0, height = 0.0
+}
+struct Point {
+    var x = 0.0, y = 0.0
+}
+struct Rect {
+    var origin = Point()
+    var size = Size()
+}
+```
+
+- 结构体给所有的属性都提供了默认值，自动获得了一个默认构造器和一个成员构造器
+
+```swift
+let defaultRect = Rect()
+let memberwiseRect = Rect(origin: Point(x: 2.0, y: 2.0),
+   size: Size(width: 5.0, height: 5.0))
+```
+
+- 通过扩展 `Rect` 结构体来提供一个允许指定 point 和 size 的构造器：
+
+```swift
+extension Rect {
+    init(center: Point, size: Size) {
+        let originX = center.x - (size.width / 2)
+        let originY = center.y - (size.height / 2)
+        self.init(origin: Point(x: originX, y: originY), size: size)
+    }
+}
+```
+
+```swift
+let centerRect = Rect(center: Point(x: 4.0, y: 4.0),
+                      size: Size(width: 3.0, height: 3.0))
+// centerRect 的 origin 是 (2.5, 2.5) 并且它的 size 是 (3.0, 3.0)
+```
+
+> 扩展新构造器，务必确保实例初始化完整
+
 ## 方法
+
+- 给 `Int` 类型添加了一个新的实例方法叫做 `repetitions`：
+
+```swift
+extension Int {
+    func repetitions(task: () -> Void) {
+        for _ in 0..<self {
+            task()
+        }
+    }
+}
+```
+
+- 对任意整形数值调用 `repetitions(task:)` 方法，来执行对应次数的任务：
+
+```swift
+3.repetitions {
+    print("Hello!")
+}
+// Hello!
+// Hello!
+// Hello!
+```
+
 ### 可变实例方法
+
+- 扩展添加的实例方法，同样也可修改（或 *mutating（改变）*）实例本身
+- `Int` 类型添加了一个新的 mutating 方法，叫做 `square`，它将原始值求平方
+
+```swift
+extension Int {
+    mutating func square() {
+        self = self * self
+    }
+}
+var someInt = 3
+someInt.square()
+// someInt 现在是 9
+```
+
 ## 下标
+
+- 下标 `[n]` 从数字右侧开始，返回小数点后的第 `n` 位
+  - `123456789[0]` 返回 `9`
+  - `123456789[1]` 返回 `8`
+
+……以此类推：
+
+
+
+```swift
+extension Int {
+    subscript(digitIndex: Int) -> Int {
+        var decimalBase = 1
+        for _ in 0..<digitIndex {
+            decimalBase *= 10
+        }
+        return (self / decimalBase) % 10
+    }
+}
+746381295[0]
+// 返回 5
+746381295[1]
+// 返回 9
+746381295[2]
+// 返回 2
+746381295[8]
+// 返回 7
+```
+
+没有足够的位数，下标的现实将返回 `0`，就好像在数字的左边补上了 0：
+
+```swift
+746381295[9]
+// 返回 0，就好像你进行了这个请求：
+0746381295[9]
+```
+
 ## 嵌套类型
 
+```swift
+extension Int {
+    enum Kind {
+        case negative, zero, positive
+    }
+    var kind: Kind {
+        switch self {
+        case 0:
+            return .zero
+        case let x where x > 0:
+            return .positive
+        default:
+            return .negative
+        }
+    }
+}
+```
+
+- 表示数字是负的、零的还是正的
+- 给 `Int` 添加了一个新的计算型实例属性，叫做 Kind
+
+```swift
+func printIntegerKinds(_ numbers: [Int]) {
+    for number in numbers {
+        switch number.kind {
+        case .negative:
+            print("- ", terminator: "")
+        case .zero:
+            print("0 ", terminator: "")
+        case .positive:
+            print("+ ", terminator: "")
+        }
+    }
+    print("")
+}
+printIntegerKinds([3, 19, -27, 0, -6, 0, 7])
+// 打印“+ + - 0 - 0 + ”
+```
+
+> 注意 `number.kind` 已经被认为是 `Int.Kind` 类型。所以，在 `switch` 语句中所有的 `Int.Kind` case 分支可以被缩写，就像使用 `.negative` 替代 `Int.Kind.negative.`。
+
 # 协议
+
+
+
 ## 协议语法
 ## 属性要求
 ## 方法要求
