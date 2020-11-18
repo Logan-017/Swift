@@ -138,7 +138,7 @@ class Student {
     
 }
 
-print("person 是否遵守协议 = \(Person() is Dell)") // person 是否遵守协议 = true
+//print("person 是否遵守协议 = \(Person() is Dell)") // person 是否遵守协议 = true
 print("--------------------")
 print("Student 是否遵守协议 = \(Student() is Dell)") // Student 是否遵守协议 = false
 print("--------------------")

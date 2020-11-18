@@ -4023,12 +4023,10 @@ manager.data.append("Some more data")
 
 ## 计算属性 - Computed Properties
 
-- 场景：无法直接赋值，需要经过计算得出
-
-- 相当于 OC 的 property 属性
-
-- 适用：类 + 结构体 + 枚举（枚举的 rawValue 本质：只读计算属性）
+- 场景：不能直接赋值，要计算得出
 - 定义时：不写 = ，直接写大括号
+- 相当于 OC 的 property 属性
+- 适用：类、结构体、枚举（枚举的 rawValue 本质：只读计算属性）
 - 不存储值，只提供一个 getter 和一个可选的 setter
 
 ```swift
@@ -4065,7 +4063,7 @@ print("square.origin is now at (\(square.origin.x), \(square.origin.y))")
 
 ### 简化 Setter 声明
 
-- setter方法默认参数名：newValue (getter 方法没有参数，只返回)
+- 默认参数名：newValue (getter 方法没有参数，只返回)
 - 上面代码的 setter 简化写法
 
 ```swift
@@ -6845,11 +6843,74 @@ things.append(optionalNumber as Any) // 没有警告
 
 # 嵌套类型
 
+- 在一个类型中嵌套另一个类型，将嵌套类型的定义写在其外部类型的 `{}` 内，而且可以根据需要定义多级嵌套
+- 使用场景：工具类/结构体
+- 适用：枚举、类、结构体
+
 ## 嵌套类型实践
 
+- 一个结构体 `BlackjackCard`（二十一点），嵌套定义枚举类型 `Suit` 和 `Rank`。
+- `Ace` 牌可以表示 `1` 或者 `11`，这一特征通过一个嵌套在 `Rank` 枚举中的结构体 `Values`
 
+```swift
+struct BlackjackCard {
+
+    // 嵌套的 Suit 枚举
+    enum Suit: Character {
+        case spades = "♠", hearts = "♡", diamonds = "♢", clubs = "♣"
+    }
+
+    // 嵌套的 Rank 枚举
+    enum Rank: Int {
+        case two = 2, three, four, five, six, seven, eight, nine, ten
+        case jack, queen, king, ace
+        struct Values {
+            let first: Int, second: Int?
+        }
+        var values: Values {
+            switch self {
+            case .ace:
+                return Values(first: 1, second: 11)
+            case .jack, .queen, .king:
+                return Values(first: 10, second: nil)
+            default:
+                return Values(first: self.rawValue, second: nil)
+            }
+        }
+    }
+
+    // BlackjackCard 的属性和方法
+    let rank: Rank, suit: Suit
+    var description: String {
+        var output = "suit is \(suit.rawValue),"
+        output += " value is \(rank.values.first)"
+        if let second = rank.values.second {
+            output += " or \(second)"
+        }
+        return output
+    }
+}
+```
+
+- 没自定义构造器，在 [结构体的逐一成员构造器]() 中可知，结构体有默认的成员构造器
+
+```swift
+let theAceOfSpades = BlackjackCard(rank: .ace, suit: .spades)
+print("theAceOfSpades: \(theAceOfSpades.description)")
+// 打印“theAceOfSpades: suit is ♠, value is 1 or 11”
+```
+
+- 尽管 `Rank` 和 `Suit` 嵌套在 `BlackjackCard` 中，但它们的类型仍可从上下文中推断出来
+- 所以在初始化实例时能够单独通过成员名称（`.ace` 和 `.spades`）引用枚举实例
 
 ## 引用嵌套类型
+
+- 嵌套类型的类型名前加上其外部类型的类型名，作为前缀
+
+```swift
+let heartsSymbol = BlackjackCard.Suit.hearts.rawValue
+// 红心符号为“♡”
+```
 
 # 扩展
 ## 扩展的语法
