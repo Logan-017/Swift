@@ -6,8 +6,8 @@
 
 - 参考资料：
   - [Swift 官方文档](https://docs.swift.org/swift-book/)
-  - [cnSwift 翻译组](https://www.cnswift.org)
   - [SwiftGG 翻译组](https://swiftgg.gitbook.io/swift/)
+  - [cnSwift 翻译组](https://www.cnswift.org)
 
 
 # 开始使用 Swift
@@ -7156,32 +7156,885 @@ printIntegerKinds([3, 19, -27, 0, -6, 0, 7])
 
 # 协议
 
-
-
 ## 协议语法
+
+- 与类、结构体、枚举类型非常相似
+
+```swift
+protocol SomeProtocol {
+    // protocol definition goes here
+}
+```
+
+- 表示该类型采纳协议，多个协议用逗号分开：
+
+```swift
+struct SomeStructure: FirstProtocol, AnotherProtocol {
+    // structure definition goes here
+}
+```
+
+- 有父类的写法，父类名放协议名之前，用逗号分隔
+
+```swift
+class SomeClass: SomeSuperclass, FirstProtocol, AnotherProtocol {
+    // class definition goes here
+}
+```
+
 ## 属性要求
+
+- 场景：要求遵循该协议的类型，提供特定名字和类型的实例属性或类型属性
+- 特性：
+  - 不要求 存储属性 or 计算属性（只要求名称和类型一致）
+  - 须明确可读可写（set 和 get）
+    - 可读写：不能用常量、只读属性
+    - 只读：任意类型
+
+```swift
+protocol SomeProtocol {
+    var mustBeSettable: Int { get set }
+    var doesNotNeedToBeSettable: Int { get }
+}
+```
+
+- 类型属性:  实现时，使用 class 或static 关键字
+
+```swift
+protocol AnotherProtocol {
+    static var someTypeProperty: Int { get set }
+}
+```
+
+- 只有一个实例属性要求
+
+```swift
+protocol FullyNamed {
+    var fullName: String { get }
+}
+```
+
+- 使用
+
+```swift
+struct Person: FullyNamed {
+    var fullName: String
+}
+let john = Person(fullName: "John Appleseed")
+// john.fullName is "John Appleseed"
+```
+
+- 更加复杂的类，遵循 FullyNamed 协议
+
+```swift
+class Starship: FullyNamed {
+    var prefix: String?
+    var name: String
+    init(name: String, prefix: String? = nil) {
+        self.name = name
+        self.prefix = prefix
+    }
+    var fullName: String {
+        return (prefix != nil ? prefix! + " " : "") + name
+    }
+}
+var ncc1701 = Starship(name: "Enterprise", prefix: "USS")
+// ncc1701.fullName is "USS Enterprise"
+```
+
+- 当 prefix 值存在时，fullName 将 prefix 放在 name 之前以创建星舰的全名
+
 ## 方法要求
+
+- 使用场景：要求采纳的类型，实现指定的实例方法和类方法
+- 语法：
+  - 与正常实例、类方法相同，但不需大括号
+  - 方法参数不能定义默认值（可在扩展中写默认实现）
+
+```swift
+protocol SomeProtocol {
+    static func someTypeMethod()
+}
+```
+
+- 只有一个实例方法要求的协议，要求生成器提供一个生成随机数的标准过程
+
+```swift
+protocol RandomNumberGenerator {
+    func random() -> Double
+}
+```
+
+```swift
+class LinearCongruentialGenerator: RandomNumberGenerator {
+    var lastRandom = 42.0
+    let m = 139968.0
+    let a = 3877.0
+    let c = 29573.0
+    func random() -> Double {
+        lastRandom = ((lastRandom * a + c).truncatingRemainder(dividingBy:m))
+        return lastRandom / m
+    }
+}
+let generator = LinearCongruentialGenerator()
+print("Here's a random number: \(generator.random())")
+// Prints "Here's a random number: 0.37464991998171"
+print("And another one: \(generator.random())")
+// Prints "And another one: 0.729023776863283"
+```
+
 ## 异变方法要求
+
+- 场景：方法需要改变（或*异变*）其所属的实例
+- 语法：在方法的 func 关键字之前，使用 mutating 关键字
+
+> 在协议标记实例方法 mutating ，mutating 只在结构体和枚举要写，为类实现该方法的时不用写 mutating 
+
+```swift
+protocol Togglable {
+    mutating func toggle()
+}
+```
+
+```swift
+enum OnOffSwitch: Togglable {
+    case off, on
+    mutating func toggle() {
+        switch self {
+        case .off:
+            self = .on
+        case .on:
+            self = .off
+        }
+    }
+}
+var lightSwitch = OnOffSwitch.off
+lightSwitch.toggle()
+// lightSwitch is now equal to .on
+```
+
 ## 构造器要求
+
+- 场景：遵循协议的类型实现指定的初始化器
+
+- 语法：不用写大括号
+
+```swift
+protocol SomeProtocol {
+    init(someParameter: Int)
+}
+```
+
 ### 协议构造器要求的类实现
+
+- 实现要求：
+  - 指定和便捷初始化器都可以
+  - 必须用 required 关键字修饰（保证了子类继承父类协议时，实现方法）
+
+```swift
+class SomeClass: SomeProtocol {
+    required init(someParameter: Int) {
+        // initializer implementation goes here
+    }
+}
+```
+
+> 由于 final 的类没子类，协议初始化器实现的类，用 final 标记，不需用 required 修饰。因为这样的类不能被继承子类。详见 阻止重写 
+
+- 一个子类，重写了父类指定的初始化器 + 遵循协议实现了要求的初始化器，这个初始化器的实现添加 required 和 override 
+
+```swift
+protocol SomeProtocol {
+    init()
+}
+ 
+class SomeSuperClass {
+    init() {
+        // initializer implementation goes here
+    }
+}
+ 
+class SomeSubClass: SomeSuperClass, SomeProtocol {
+    // "required" from SomeProtocol conformance; "override" from SomeSuperClass
+    required override init() {
+        // initializer implementation goes here
+    }
+}
+```
+
 ### 可失败构造器要求
+
+- 可失败的初始化器的实现：
+  - 不可失败初始化器
+  - 隐式展开的可失败初始化器
+
 ## 协议作为类型
-## 委托
+
+- 协议自身并不实现功能，可以变为一个功能完备的类型在代码中使用。
+  - 作为参数或返回类型
+  - 作为常量、变量或者属性的类型；
+  - 作为数组、字典或者其他存储器的元素的类型
+
+> 协议是类型，要开头大写（比如说 FullyNamed 和 RandomNumberGenerator ）来匹配 Swift 里其他类型名称格式（比如说 Int 、 String 还有 Double ）
+
+- 例子：
+
+```swift
+class Dice {
+    let sides: Int
+    let generator: RandomNumberGenerator
+    init(sides: Int, generator: RandomNumberGenerator) {
+        self.sides = sides
+        self.generator = generator
+    }
+    func roll() -> Int {
+        return Int(generator.random() * Double(sides)) + 1
+    }
+}
+```
+
+- generator 属性是 RandomNumberGenerator 类型，任何采纳了RandomNumberGenerator 协议的类型
+
+- 初始化器有一个形式参数叫做generator ，它同样也是 RandomNumberGenerator 类型，接收遵循这个协议的类型的值
+-  random() 方法，由于 generator 已知采纳了RandomNumberGenerator ，它保证了会有 random() 方法以供调用
+
+
+
+- Dice 类用 LinearCongurentialGenerator 实例创建一个六面骰子的随机数生成器，来创建一个六面骰子
+
+```swift
+var d6 = Dice(sides: 6, generator: LinearCongruentialGenerator())
+for _ in 1...5 {
+    print("Random dice roll is \(d6.roll())")
+}
+```
+
+## 委托 / 代理
+
+- 是一种设计模式：委托/代理模式
+  - 通过定义一个封装了委托责任的协议来实现
+  - 遵循了协议的类型（所谓的委托）来保证提供被委托的功能
+  - 响应一个特定的行为
+  - 从外部资源取回数据（而不需要了解资源具体的类型）
+
+> *Delegation 委托，可能也以“代理”而为人熟知，这里我们选择译为“委托”是为了更好的理解避免混淆*
+
+- 定义了两个协议以用于基于骰子的棋盘游戏:
+
+```swift
+protocol DiceGame {
+    var dice: Dice { get }
+    func play()
+}
+protocol DiceGameDelegate {
+    func gameDidStart(_ game: DiceGame)
+    func game(_ game: DiceGame, didStartNewTurnWithDiceRoll diceRoll: Int)
+    func gameDidEnd(_ game: DiceGame)
+}
+```
+
+- DiceGame 与骰子有关的游戏采纳的协议，DiceGameDelegate 协议可以被任何追踪 DiceGame 进度的类型采纳
+
+- 采用 DiceGame 协议；然后通知一个 DiceGameDelegate 关于进度的信息
+
+```swift
+class SnakesAndLadders: DiceGame {
+    let finalSquare = 25
+    let dice = Dice(sides: 6, generator: LinearCongruentialGenerator())
+    var square = 0
+    var board: [Int]
+    init() {
+        board = Array(repeating: 0, count: finalSquare + 1)
+        board[03] = +08; board[06] = +11; board[09] = +09; board[10] = +02
+        board[14] = -10; board[19] = -11; board[22] = -02; board[24] = -08
+    }
+    var delegate: DiceGameDelegate?
+    func play() {
+        square = 0
+        delegate?.gameDidStart(self)
+        gameLoop: while square != finalSquare {
+            let diceRoll = dice.roll()
+            delegate?.game(self, didStartNewTurnWithDiceRoll: diceRoll)
+            switch square + diceRoll {
+            case finalSquare:
+                break gameLoop
+            case let newSquare where newSquare > finalSquare:
+                continue gameLoop
+            default:
+                square += diceRoll
+                square += board[square]
+            }
+        }
+        delegate?.gameDidEnd(self)
+    }
+}
+```
+
+- dice 属性为常量，因它不需初始化后再改变，而且协议只需它是可读
+-  delegate 属性为*可选* ，自动初始化为 nil ，play() 方法调用委托时候需用可选链
+
+
+
+-  DiceGameDelegate 协议：
+
+```swift
+class DiceGameTracker: DiceGameDelegate {
+    var numberOfTurns = 0
+    func gameDidStart(_ game: DiceGame) {
+        numberOfTurns = 0
+        if game is SnakesAndLadders {
+            print("Started a new game of Snakes and Ladders")
+        }
+        print("The game is using a \(game.dice.sides)-sided dice")
+    }
+    func game(_ game: DiceGame, didStartNewTurnWithDiceRoll diceRoll: Int) {
+        numberOfTurns += 1
+        print("Rolled a \(diceRoll)")
+    }
+    func gameDidEnd(_ game: DiceGame) {
+        print("The game lasted for \(numberOfTurns) turns")
+    }
+}
+```
+
+```swift
+let tracker = DiceGameTracker()
+let game = SnakesAndLadders()
+game.delegate = tracker
+game.play()
+// Started a new game of Snakes and Ladders
+// The game is using a 6-sided dice
+// Rolled a 3
+// Rolled a 5
+// Rolled a 4
+// Rolled a 5
+// The game lasted for 4 turns
+```
+
 ## 在扩展里添加协议遵循
+
+- 场景：给已存在的类遵循一个新协议（无法访问该类型的源代码也行）
+
+> 类型已经存在的实例，自动地采纳和遵循这个协议。
+
+- 用文本表达的类型实现
+
+```swift
+protocol TextRepresentable {
+    var textualDescription: String { get }
+}
+```
+
+- 遵循 TextRepresentable ：
+
+```swift
+extension Dice: TextRepresentable {
+    var textualDescription: String {
+        return "A \(sides)-sided dice"
+    }
+}
+```
+
+- Dice 实例现在都可以被视作 TextRepresentable ：
+
+```swift
+let d12 = Dice(sides: 12, generator: LinearCongruentialGenerator())
+print(d12.textualDescription)
+// Prints "A 12-sided dice"
+```
+
+```swift
+extension SnakesAndLadders: TextRepresentable {
+    var textualDescription: String {
+        return "A game of Snakes and Ladders with \(finalSquare) squares"
+    }
+}
+print(game.textualDescription)
+```
+
 ## 有条件地遵循协议
+
+- 使用场景：泛型有条件遵守协议
+- 语法：协议的名字后面写泛型 where 分句
+
+
+
+- 让 Array 类型在存储遵循 TextRepresentable 协议的元素时遵循TextRepresentable 协议
+  - 让元素拥有协议方法
+
+```swift
+extension Array: TextRepresentable where Element: TextRepresentable {
+    var textualDescription: String {
+        let itemsAsText = self.map { $0.textualDescription }
+        return "[" + itemsAsText.joined(separator: ", ") + "]"
+    }
+}
+let myDice = [d6, d12]
+print(myDice.textualDescription)
+// Prints "[A 6-sided dice, A 12-sided dice]"
+```
+
 ## 在扩展里声明采纳协议
+
+- 场景：实现了协议方法，但没遵循协议
+- 语法：遵循协议 + 空拓展
+
+```swift
+struct Hamster {
+    var name: String
+    var textualDescription: String {
+        return "A hamster named \(name)"
+    }
+}
+extension Hamster: TextRepresentable {}
+```
+
+- Hamster 实例，可以赋值给遵守 TextRepresentable 协议的实例
+
+```swift
+let simonTheHamster = Hamster(name: "Simon")
+let somethingTextRepresentable: TextRepresentable = simonTheHamster
+print(somethingTextRepresentable.textualDescription)
+// Prints "A hamster named Simon"
+```
+
+> 类型不会因为实现协议方法，就自动遵守协议，必须显式地声明
+
 ## 使用合成实现来采纳协议
+
+- 场景：使用系统定义 + 实现好的协议，直接调用协议的功能方法（减少重复代码）
+
+- 常见系统协议： Equatable 、 Hashable 以及 Comparable 协议
+
+- Swift 为以下自定义类型提供了 Equatable 的综合实现：
+
+  - 只包含遵循 Equatable 协议的**存储属性**的**结构体**；
+  - 只关联遵循 Equatable 协议的类型的**枚举**；
+  - 没有关联类型的**枚举**。
+
+- 遵循 Equatable 协议
+
+  - 不需手动实现 == 运算符
+  - 默认的 != 实现
+
+  
+
+- Swift为以下自定义类型提供了 Hashable 的综合实现：
+
+  - 只包含遵循 Hashable 协议的存储属性的结构体；
+  - 只关联遵循 Hashable 协议的类型的枚举；
+  - 没有关联类型的枚举。
+
+- 遵循 Hashable 协议
+
+  - 不需要手动实现 hash(into:) 方法
+
+
+
+- Swift为不包含原始值的枚举，提供 Comparable 的综合实现
+  - 如果枚举拥有关联类型，这些类型必须都遵循 Comparable 协议
+- 遵循 Comparable 协议
+  - 不需要手动实现 <= 、 > 和 >=  运算符
+
+
+
+- 定义了一个包含 beginners、intermediates以及 experts 情况的枚举SkillLevel
+
+- Experts 还额外使用数字来记录他们拥有的星星数量等级。
+
+```swift
+enum SkillLevel: Comparable {
+    case beginner
+    case intermediate
+    case expert(stars: Int)
+}
+var levels = [SkillLevel.intermediate, SkillLevel.beginner,
+              SkillLevel.expert(stars: 5), SkillLevel.expert(stars: 3)]
+for level in levels.sorted() {
+    print(level)
+}
+// Prints "beginner"
+// Prints "intermediate"
+// Prints "expert(stars: 3)"
+// Prints "expert(stars: 5)"
+```
+
 ## 协议类型的集合
+
+- 场景：存储遵守统一协议的元素
+
+```swift
+let things: [TextRepresentable] = [game, d12, simonTheHamster]
+```
+
+- 现在可以遍历数组中的元素了，并且打印每一个元素的文本化描述：
+
+```swift
+for thing in things {
+    print(thing.textualDescription)
+}
+// A game of Snakes and Ladders with 25 squares
+// A 12-sided dice
+// A hamster named Simon
+```
+
+- 注意 thing 常量是 TextRepresentable 类型。它不是 Dice 类型，抑或 DiceGame 还是Hamster ，就算后台实际类型是它们之一
+
 ## 协议的继承
+
+- 场景：扩充功能
+- 语法：与类继承类似，但可以多继承
+
+```swift
+protocol InheritingProtocol: SomeProtocol, AnotherProtocol {
+    // protocol definition goes here
+}
+```
+
+- 继承了上边 TextRepresentable 协议
+
+```swift
+protocol PrettyTextRepresentable: TextRepresentable {
+    var prettyTextualDescription: String { get }
+}
+```
+
+- SnakesAndLadders 类可以通过扩展来采纳和遵循 PrettyTextRepresentable ：
+
+```swift
+extension SnakesAndLadders: PrettyTextRepresentable {
+    var prettyTextualDescription: String {
+        var output = textualDescription + ":\n"
+        for index in 1...finalSquare {
+            switch board[index] {
+            case let ladder where ladder > 0:
+                output += "▲ "
+            case let snake where snake < 0:
+                output += "▼ "
+            default:
+                output += "○ "
+            }
+        }
+        return output
+    }
+}
+
+```
+
+```swift
+print(game.prettyTextualDescription)
+// A game of Snakes and Ladders with 25 squares:
+// ○ ○ ▲ ○ ○ ▲ ○ ○ ▲ ▲ ○ ○ ○ ▼ ○ ○ ○ ○ ▼ ○ ○ ▼ ○ ▼ ○
+```
+
 ## 类专属的协议
+
+- 场景：限制协议只能被类类型采纳（并且不是结构体或者枚举）
+- 语法：添加 AnyObject 关键字到协议的继承列表
+
+```swift
+protocol SomeClassOnlyProtocol: AnyObject, SomeInheritedProtocol {
+    // class-only protocol definition goes here
+}
+```
+
 ## 协议合成
+
+- 场景：要求一个类型一次遵循多个协议
+
+- 注意：协议组合不定义任何新的协议类型
+- 语法：用 SomeProtocol & AnotherProtocol 的形式
+
+```swift
+protocol Named {
+    var name: String { get }
+}
+protocol Aged {
+    var age: Int { get }
+}
+struct Person: Named, Aged {
+    var name: String
+    var age: Int
+}
+func wishHappyBirthday(to celebrator: Named & Aged) {
+    print("Happy birthday, \(celebrator.name), you're \(celebrator.age)!")
+}
+let birthdayPerson = Person(name: "Malcolm", age: 21)
+wishHappyBirthday(to: birthdayPerson)
+// Prints "Happy birthday, Malcolm, you're 21!"
+```
+
+- 不关心具体是什么样的类型传入函数，只要它遵循这两个要求的协议即可
+
+```swift
+class Location {
+    var latitude: Double
+    var longitude: Double
+    init(latitude: Double, longitude: Double) {
+        self.latitude = latitude
+        self.longitude = longitude
+    }
+}
+
+class City: Location, Named {
+    var name: String
+    init(name: String, latitude: Double, longitude: Double) {
+        self.name = name
+        super.init(latitude: latitude, longitude: longitude)
+    }
+}
+
+// 任何 Location 的子类且遵循 Named 协议的类型
+func beginConcert(in location: Location & Named) {
+    print("Hello, \(location.name)!")
+}
+
+let seattle = City(name: "Seattle", latitude: 47.6, longitude: -122.3)
+beginConcert(in: seattle)
+// Prints "Hello, Seattle!"
+```
+
 ## 检查协议一致性
+
+- 场景：检查是否遵守协议
+- 语法：使用 is 和 as 
+- 循协议is运算符返回 true 否则返回 false
+- as? 成功，返回协议的可选项，如果不遵循协议，返回nil ；
+- as! 成功返回解包值，失败运行时报错
+
+```
+protocol HasArea {
+    var area: Double { get }
+}
+```
+
+- Circle 和 Country ，这两个类都遵循 HasArea 协议
+
+```swift
+class Circle: HasArea {
+    let pi = 3.1415927
+    var radius: Double
+    var area: Double { return pi * radius * radius }
+    init(radius: Double) { self.radius = radius }
+}
+class Country: HasArea {
+    var area: Double
+    init(area: Double) { self.area = area }
+}
+```
+
+- Animal 的类，它不遵循 HasArea 协议
+
+```swift
+class Animal {
+    var legs: Int
+    init(legs: Int) { self.legs = legs }
+}
+```
+
+- Circle 、 Country 和 Animal 类并不基于相同的基类。不过它们都是类
+
+```swift
+let objects: [AnyObject] = [
+    Circle(radius: 2.0),
+    Country(area: 243_610),
+    Animal(legs: 4)
+]
+```
+
+```swift
+for object in objects {
+    if let objectWithArea = object as? HasArea {
+        print("Area is \(objectWithArea.area)")
+    } else {
+        print("Something that doesn't have an area")
+    }
+}
+// Area is 12.5663708
+// Area is 243610.0
+// Something that doesn't have an area
+```
+
 ## 可选的协议要求
+
+- 场景：不需要遵循协议的类型实现
+- 语法：使用optional 修饰符作为前缀
+- 可选要求协议被 Objective-C 遵循
+  - 协议和可选要求必须用 @objc 标志标记
+  - @objc 协议只能被继承 OC 类或 @objc 类采纳（不能被结构体或者枚举采纳）
+- 可选方法或属性时，类型自动变成可选项
+  - 一个 (Int) ->String 类型的方法会变成 ((Int) -> String)?（函数类型可选项，不是返回值）
+- 可选协议可在可选链中调用
+  - 在调用方法的时候在方法名后边写一个问号来检查它是否被实现
+
+```swift
+someOptionalMethod?(someArgument)
+```
+
+- Counter 的整数计数的类，用一个外部数据源来提供它的增量
+
+```swift
+@objc protocol CounterDataSource {
+    @objc optional func increment(forCount count: Int) -> Int
+    @objc optional var fixedIncrement: Int { get }
+}
+```
+
+> 可以写一个遵循 CounterDataSource 的自定义类而不实现*任何*协议要求。反正它们都是可选的。尽管技术上来讲是可以的，但这样的话就不能做一个好的数据源了。
+
+- 定义的 Counter 类，有一个可选的 dataSource 属性，类型是CounterDataSource? 
+
+```swift
+class Counter {
+    var count = 0
+    var dataSource: CounterDataSource?
+    func increment() {
+        if let amount = dataSource?.increment?(forCount: count) {
+            count += amount
+        } else if let amount = dataSource?.fixedIncrement {
+            count += amount
+        }
+    }
+}
+```
+
+-  dataSource 不是 nil 的时候才能调用 incrementForCount(forCount:)， dataSource *确实*存在，也没有人能保证它实现了 incrementForCount(forCount:) ，因为它是可选要求
+- 就算 dataSource *确实*存在，也没有人能保证它实现了 incrementForCount(forCount:) ，因为它是可选要求
+
+
+
+- 据源在每次查询时返回固定值 3 .它通过实现可选 fixedIncrement 属性要求来实现这一点
+
+```swift
+class ThreeSource: NSObject, CounterDataSource {
+    let fixedIncrement = 3
+}
+```
+
+- 使用 ThreeSource 的实例作为新 Counter 实例的数据源：
+
+```swift
+var counter = Counter()
+counter.dataSource = ThreeSource()
+for _ in 1...4 {
+    counter.increment()
+    print(counter.count)
+}
+// 3
+// 6
+// 9
+// 12
+```
+
+- 使 Counter 实例依照它当前的count 值往上或往下朝着零计数
+
+```swift
+@objc class TowardsZeroSource: NSObject, CounterDataSource {
+    func increment(forCount count: Int) -> Int {
+        if count == 0 {
+            return 0
+        } else if count < 0 {
+            return 1
+        } else {
+            return -1
+        }
+    }
+}
+```
+
+- 使用 TowardsZeroSource 给现存的 Counter 实例来从 -4 到零。一旦计数器到零，就不会再变化：
+
+```swift
+counter.count = -4
+counter.dataSource = TowardsZeroSource()
+for _ in 1...5 {
+    counter.increment()
+    print(counter.count)
+}
+// -3
+// -2
+// -1
+// 0
+// 0
+```
+
 ## 协议扩展
+
+- 场景：通过扩展，实现协议属性或方法
+- RandomNumberGenerator 协议可以扩展来提供 randomBool() 方法
+
+```swift
+extension RandomNumberGenerator {
+    func randomBool() -> Bool {
+        return random() > 0.5
+    }
+}
+```
+
+- 有的遵循类型自动获得这个方法的实现
+
+```swift
+let generator = LinearCongruentialGenerator()
+print("Here's a random number: \(generator.random())")
+// Prints "Here's a random number: 0.37464991998171"
+print("And here's a random Boolean: \(generator.randomBool())")
+// Prints "And here's a random Boolean: true"
+```
+
 ### 提供默认实现
+
+- 使用协议扩展，给协议方法或者计算属性，提供默认实现
+  - 遵守协议 + 自定义了实现 = 替代默认实现
+
+> 有默认实现的要求，不需要使用可选链就能调用
+
+- 提供一个默认实现来简单的返回访问textualDescription 属性的结果
+
+```swift
+extension PrettyTextRepresentable  {
+    var prettyTextualDescription: String {
+        return textualDescription
+    }
+}
+```
+
 ### 为协议扩展添加限制条件
 
+- 场景：协议扩展，明确遵循类型的限制
+- 语法：在扩展协议名字后边使用where 分句来写这些限制
+- 给 Collection 定义一个扩展，任意元素遵循上面 TextRepresentable 协议
+
+```swift
+extension Collection where Iterator.Element: TextRepresentable {
+    var textualDescription: String {
+        let itemsAsText = self.map { $0.textualDescription }
+        return "[" + itemsAsText.joined(separator: ", ") + "]"
+    }
+}
+```
+
+- 之前的 Hamster 结构体，它遵循 TextRepresentable 协议， Hamster 值的数组
+
+```swift
+let murrayTheHamster = Hamster(name: "Murray")
+let morganTheHamster = Hamster(name: "Morgan")
+let mauriceTheHamster = Hamster(name: "Maurice")
+let hamsters = [murrayTheHamster, morganTheHamster, mauriceTheHamster]
+```
+
+-  Array 遵循 Collection 并且数组的元素遵循 TextRepresentable 协议，数组可以使用 textualDescription 属性来获取它内容的文本化
+
+```swift
+print(hamsters.textualDescription)
+// Prints "[A hamster named Murray, A hamster named Morgan, A hamster named Maurice]"
+```
+
+> 如果遵循类型满足了为相同方法或者属性提供实现的多限制扩展的要求，Swift 会使用最匹配限制的实现。
+
 # 泛型
+
+- 
+
 ## 泛型解决的问题
 ## 泛型函数
 ## 类型参数
