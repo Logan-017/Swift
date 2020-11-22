@@ -104,6 +104,8 @@ occupations = [:]
 ### 错误处理
 ### 泛型
 
+
+
 ## Swift 版本修订记录
 [cnSwift](https://www.cnswift.org/document-revision-history)
 
@@ -8031,31 +8033,675 @@ print(hamsters.textualDescription)
 
 > 如果遵循类型满足了为相同方法或者属性提供实现的多限制扩展的要求，Swift 会使用最匹配限制的实现。
 
-# 泛型
+# 泛型 - Generics
 
-- 
+- 场景：类型参数化，增强代码的复用性
+- 很多 Swift 标准库是基于泛型构建
+  - Array 和Dictionary 类型都是泛型集合
+    - 可以创建一个容纳 Int 值的数组，或者容纳String 值的数组
+    - 以创建一个存储任何指定类型值的字典，而且类型没有限制
 
 ## 泛型解决的问题
+
+- 非泛型例子
+
+```swift
+func swapTwoInts(_ a: inout Int, _ b: inout Int) {
+    let temporaryA = a
+    a = b
+    b = temporaryA
+}
+```
+
+- 使用
+
+```swift
+var someInt = 3
+var anotherInt = 107
+swapTwoInts(&someInt, &anotherInt)
+print("someInt is now \(someInt), and anotherInt is now \(anotherInt)")
+// Prints "someInt is now 107, and anotherInt is now 3"
+```
+
+- 非泛型例子
+
+```swift
+func swapTwoStrings(_ a: inout String, _ b: inout String) {
+    let temporaryA = a
+    a = b
+    b = temporaryA
+}
+
+func swapTwoDoubles(_ a: inout Double, _ b: inout Double) {
+    let temporaryA = a
+    a = b
+    b = temporaryA
+}
+```
+
+- 函数体是一样的。唯一的区别是它们接收值类型不同（ Int 、String 和 Double ）
+
+> 若 a 和 b 类型不同，Swift 是类型安全语言，会引发一个编译错误。
+
 ## 泛型函数
+
+- 上面提到的 swapTwoInts(_:_:) 函数的泛型版本，叫做 swapTwoValues(_:_:) ：
+
+```swift
+func swapTwoValues<T>(_ a: inout T, _ b: inout T) {
+    let temporaryA = a
+    a = b
+    b = temporaryA
+}
+```
+
+- *占位符*类型名（ T ）
+  - 不是实际类型名（比如Int 、 String 或 Double ），Swift 不会查找尖括号的 T 类型
+  -  a 和 b 必须都是同一个类型 T
+  - 调用函数时，会根据实际数据类型，替代 T 
+
+
+
+- 两个例子中， T 分别被推断为 Int 和 String ：
+
+```swift
+var someInt = 3
+var anotherInt = 107
+swapTwoValues(&someInt, &anotherInt)
+// someInt is now 107, and anotherInt is now 3
+ 
+var someString = "hello"
+var anotherString = "world"
+swapTwoValues(&someString, &anotherString)
+// someString is now "world", and anotherString is now "hello"
+```
+
+> swap 函数是 Swift 标准库的一部分，可直接用  swap(_:_:) 函数，不需要自己实现
+
 ## 类型参数
+
+- **类型参数**跟**普通参数**类似
+  - 命名，写在函数名后面的尖括号里
+  - 用作参数类型、返回值类型
+  - 多个类型参数，用逗号隔开
+
 ## 命名类型参数
+
+- 类型参数命名规范：
+  - 要有描述性时：
+    - 如 Dictionary<Key, Value> 中的Key 和 Value
+  - 没有关系描述时：
+    - 一般按单个字母命名，如 T 、 U 、 V ，如上面 swapTwoValues(_:_:) 函数中的 T
+
+> 类型参数永远用**大写开头**的驼峰命名法（如 T 和 MyTypeParameter ），以指明是一个类型的占位符，不是一个值。
+
 ## 泛型类型
+
+- 场景：自定义一个带泛型的类型（相对于带泛型的函数）
+
+- 展示如何写出一个叫做 Stack 的泛型集合类型
+  - 数组允许在其中任何位置插入和移除元素。
+  - 栈的新元素只能添加到集合的末尾（*压栈*）。
+  - 栈只允许从集合的末尾移除元素（*出栈*）。
+
+- 非泛型版本的栈，是一个 Int 值的栈
+
+```swift
+swstruct IntStack {
+    var items = [Int]()
+    mutating func push(_ item: Int) {
+        items.append(item)
+    }
+    mutating func pop() -> Int {
+        return items.removeLast()
+    }
+}
+```
+
+- 泛型版本：
+
+```swift
+struct Stack<Element> {
+    var items = [Element]()
+    mutating func push(_ item: Element) {
+        items.append(item)
+    }
+    mutating func pop() -> Element {
+        return items.removeLast()
+    }
+}
+```
+
+- 给尖括号传参，创建一个新的字符串栈，可以写 Stack<String>() ：
+
+```swift
+var stackOfStrings = Stack<String>()
+stackOfStrings.push("uno")
+stackOfStrings.push("dos")
+stackOfStrings.push("tres")
+stackOfStrings.push("cuatro")
+// the stack now contains 4 strings
+```
+
+```swift
+let fromTheTop = stackOfStrings.pop()
+// fromTheTop is equal to "cuatro", and the stack now contains 3 strings
+```
+
 ## 泛型扩展
+
+场景：给**泛型类型**写扩展
+
+- 不需写出**类型参数**的列表
+- 原（始）类型的**类型参数**可用于拓展
+
+- 添加一个叫做 topItem 的只读计算属性，不需要移除
+
+```swift
+extension Stack {
+    var topItem: Element? {
+        return items.isEmpty ? nil : items[items.count - 1]
+    }
+}
+```
+
+- 扩展没有定义类型形式参数列表。相反，扩展中用 Stack 已有的类型形式参数名称， Element ，来指明计算属性 topItem 的可选项类型。
+
 ## 类型约束
+
+场景：限定泛型，必须继承特定的类 or 遵守特定协议
+
+- Dictionary 需要它的键是可哈希的，以便它可以检查字典中是否包含一个特定键的值
+  - 指明了键类型必须遵循 Swift 标准库中定义的 Hashable 协议
+- 所有 Swift 基本类型（比如 String 、 Int 、Double 和 Bool ）默认都是可哈希的
+
 ### 类型约束语法
+
+语法：类型形式参数，名称后面放一个类或协议，作为形式参数列表的一部分
+
+```swift
+func someFunction<T: SomeClass, U: SomeProtocol>(someT: T, someU: U) {
+    // function body goes here
+}
+```
+
+- T ，要求 T 是SomeClass 的子类。 U ，要求 U 遵循SomeProtocol 协议。
+
 ### 类型约束实践
-## 关联类型
+
+给定字符串，它会返回数组中第一个匹配的字符串的索引值，如果找不到给定字符串就返回 nil ：
+
+```swift
+func findIndex(ofString valueToFind: String, in array: [String]) -> Int? {
+    for (index, value) in array.enumerated() {
+        if value == valueToFind {
+            return index
+        }
+    }
+    return nil
+}
+```
+
+```swift
+let strings = ["cat", "dog", "llama", "parakeet", "terrapin"]
+if let foundIndex = findIndex(ofString: "llama", in: strings) {
+    print("The index of llama is \(foundIndex)")
+}
+// Prints "The index of llama is 2"
+```
+
+- 只能用于字符串
+
+- T 类型的值代替所有用到的字符串，可以用泛型函数写一个相同的功能
+
+```
+func findIndex<T>(of valueToFind: T, in array:[T]) -> Int? {
+    for (index, value) in array.enumerated() {
+        if value == valueToFind {
+            return index
+        }
+    }
+    return nil
+}
+```
+
+- 报运行时错误 - 原因：
+  - 不是每种都能用相等操作符（ == ）来比较的，如类、结构体，相等无法推断
+- 解决：
+  - 遵循 Equatable 的协议
+
+```swift
+func findIndex<T: Equatable>(of valueToFind: T, in array:[T]) -> Int? {
+    for (index, value) in array.enumerated() {
+        if value == valueToFind {
+            return index
+        }
+    }
+    return nil
+}
+```
+
+```swift
+let doubleIndex = findIndex(of: 9.3, in: [3.14159, 0.1, 0.25])
+// doubleIndex is an optional Int with no value, because 9.3 is not in the array
+let stringIndex = findIndex(of: "Andrea", in: ["Mike", "Malcolm", "Andrea"])
+// stringIndex is an optional Int containing a value of 2
+```
+
+## 关联类型（协议的泛型参数）
+
+场景：定义协议不能像定义函数那样，使用泛型参数，素养使用**关联类型**
+
+报错如下：
+
+```swift
+Protocols do not allow generic parameters; use associated types instead
+```
+
+- 采纳协议时，才推断出关联类型的实际类型
+- 通过 associatedtype 关键字指定
+
 ### 关联类型实践
-### 扩展现有类型来指定关联类型
+
+- 声明了一个叫做 ItemType 的关联类型：
+
+```swift
+protocol Container {
+    associatedtype ItemType
+    mutating func append(_ item: ItemType)
+    var count: Int { get }
+    subscript(i: Int) -> ItemType { get }
+}
+```
+
+- 前面非泛型版本的 IntStack ，使其遵循 Container 协议：
+
+```swift
+struct IntStack: Container {
+    // original IntStack implementation
+    var items = [Int]()
+    mutating func push(_ item: Int) {
+        items.append(item)
+    }
+    mutating func pop() -> Int {
+        return items.removeLast()
+    }
+    // conformance to the Container protocol
+    typealias ItemType = Int
+    mutating func append(_ item: Int) {
+        self.push(item)
+    }
+    var count: Int {
+        return items.count
+    }
+    subscript(i: Int) -> Int {
+        return items[i]
+    }
+}
+```
+
+- 指定 ItemType 类型是 Int 。如果删除 typealias ItemType = Int ，一切正常运行，因为 ItemType 该用什么类型能被推断出来
+
+
+
+- 遵循 Container 协议的**泛型 Stack** 类型
+
+```swift
+struct Stack<Element>: Container {
+    // original Stack<Element> implementation
+    var items = [Element]()
+    mutating func push(_ item: Element) {
+        items.append(item)
+    }
+    mutating func pop() -> Element {
+        return items.removeLast()
+    }
+    // conformance to the Container protocol
+    mutating func append(_ item: Element) {
+        self.push(item)
+    }
+    var count: Int {
+        return items.count
+    }
+    subscript(i: Int) -> Element {
+        return items[i]
+    }
+}
+```
+
+-  Element 用于 append(_:) 方法的 item 形式参数和下标的返回类型
+- Swift 可以推断出 Element 是适用于 ItemType 的类型
+
 ### 给关联类型添加约束
+
+- 场景：给协议的关联类型，添加协议遵守或类型继承
+- 定义了一个版本的 Container ，它要求容器中的元素都是可判等的
+
+```swift
+protocol Container {
+    associatedtype Item: Equatable
+    mutating func append(_ item: Item)
+    var count: Int { get }
+    subscript(i: Int) -> Item { get }
+}
+```
+
+- 遵循这个版本的 Container ，容器的 Item 必须遵循 Equatable 协议
+
 ### 在关联类型约束里使用协议
+
+- 场景：限定协议的关联类型
+- 返回容器中从后往前给定数量的元素
+
+```swift
+protocol SuffixableContainer: Container {
+    associatedtype Suffix: SuffixableContainer where Suffix.Item == Item
+    func suffix(_ size: Int) -> Suffix
+}
+```
+
+- 关联类型 Suffix 拥有两个约束
+  - 必须遵循 SuffixableContainer 协议（就是当前定义的协议）
+  -  Item 类型必须是和容器里的 Item 类型相同
+
+- 扩展添加了对SuffixableContainer 协议的遵循
+
+```swift
+extension Stack: SuffixableContainer {
+    func suffix(_ size: Int) -> Stack {
+        var result = Stack()
+        for index in (count-size)..<count {
+            result.append(self[index])
+        }
+        return result
+    }
+    // Inferred that Suffix is Stack.
+}
+var stackOfInts = Stack<Int>()
+stackOfInts.append(10)
+stackOfInts.append(20)
+stackOfInts.append(30)
+let suffix = stackOfInts.suffix(2)
+// suffix contains 20 and 30
+```
+
+- 使用Stack<Int> 作为它的后缀类型
+
+```swift
+extension IntStack: SuffixableContainer {
+    func suffix(_ size: Int) -> Stack<Int> {
+        var result = Stack<Int>()
+        for index in (count-size)..<count {
+            result.append(self[index])
+        }
+        return result
+    }
+    // Inferred that Suffix is Stack<Int>.
+}
+```
+
+### 扩展现有类型来指定关联类型
+
+- 场景：为系统类型扩展功能
+- 扩展 Array ，使其遵循 Container 协议。通过一个空的扩展实现
+
+```swift
+extension Array: Container {}
+```
+
+- 数组已有的 append(_:) 方法和下标使得Swift能为 ItemType 推断出合适的类型
+- 可以把任何 Array 当做一个Container 使用
+
 ## 泛型 Where 语句
+
+- 场景：在泛型函数或泛型类型，约束泛型
+
+- *Where分句*-语法：
+  - 后接关联类型的约束或类型和关联类型一致的关系
+    - 遵循指定的协议
+    - 指定的类型参数和关联类型必须相同
+  - 写在一个类型或函数体的左半个大括号前面
+
+
+
+- 查两个 Container 实例是否包含相同顺序的相同元素
+
+- 两个容器不一定是相同类型（尽管它们可以是)，元素类型必须相同
+
+```swift
+func allItemsMatch<C1: Container, C2: Container>
+    (_ someContainer: C1, _ anotherContainer: C2) -> Bool
+    where C1.ItemType == C2.ItemType, C1.ItemType: Equatable {
+        
+        // Check that both containers contain the same number of items.
+        if someContainer.count != anotherContainer.count {
+            return false
+        }
+        
+        // Check each pair of items to see if they are equivalent.
+        for i in 0..<someContainer.count {
+            if someContainer[i] != anotherContainer[i] {
+                return false
+            }
+        }
+        
+        // All items match, so return true.
+        return true
+}
+```
+
+- C1 的 ItemType 必须和 C2 的 ItemType 相同（写作 C1.ItemType ==C2.ItemType ）；
+- C1 的 ItemType 必须遵循 Equatable 协议（写作 C1.ItemType: Equatable ）。
+
+
+
+- allItemsMatch(_:_:) 函数使用
+
+```swift
+var stackOfStrings = Stack<String>()
+stackOfStrings.push("uno")
+stackOfStrings.push("dos")
+stackOfStrings.push("tres")
+ 
+var arrayOfStrings = ["uno", "dos", "tres"]
+ 
+if allItemsMatch(stackOfStrings, arrayOfStrings) {
+    print("All items match.")
+} else {
+    print("Not all items match.")
+}
+// Prints "All items match."
+```
+
+
+
 ## 具有泛型 Where 子句的扩展
+
+- 场景：扩展新功能时，给泛型添加约束条件
+
+- 添加了一个 isTop(_:) 方法
+
+```swift
+extension Stack where Element: Equatable {
+    func isTop(_ item: Element) -> Bool {
+        guard let topItem = items.last else {// 验栈不为空
+            return false
+        }
+        return topItem == item// 对比给定的元素与栈顶元素
+    }
+}
+```
+
+- 使用
+
+```swift
+if stackOfStrings.isTop("tres") {
+    print("Top element is tres.")
+} else {
+    print("Top element is something else.")
+}
+// Prints "Top element is tres."
+```
+
+- 在元素不能判等的栈调用 isTop(_:) 方法，运行时错误
+
+```swift
+struct NotEquatable { }
+var notEquatableStack = Stack<NotEquatable>()
+let notEquatableValue = NotEquatable()
+notEquatableStack.push(notEquatableValue)
+notEquatableStack.isTop(notEquatableValue) // Error
+```
+
+- 用泛型 where 分句来扩展到一个协议
+
+```swift
+extension Container where Item: Equatable {
+    func startsWith(_ item: Item) -> Bool {
+        return count >= 1 && self[0] == item
+    }
+}
+```
+
+-  方法可以应用到任何遵循 Container 协议的类型上
+
+```swift
+if [9, 9, 9].startsWith(42) {
+    print("Starts with 42.")
+} else {
+    print("Starts with something else.")
+}
+// Prints "Starts with something else."
+```
+
+- 除了要求 Item 遵循协议，还可以写泛型 where 分句要求 Item 为特定类型
+
+```swift
+extension Container where Item == Double {
+    func average() -> Double {
+        var sum = 0.0
+        for index in 0..<count {
+            sum += self[index]
+        }
+        return sum / Double(count)
+    }
+}
+print([1260.0, 1200.0, 98.6, 37.0].average())
+// Prints "648.9"
+```
+
+- 遍历容器中的元素来把它们相加，然后除以容器的总数来计算平均值
+- 显式地把总数从 Int 转为Double 来允许浮点除法
+
+
+
+- 泛型 where 分句中包含多个要求来作为扩展的一部分，每一个需求用逗号分隔
+
 ## 包含上下文关系的 where 分句
+
+- 场景：简化代码，多个泛型类型的 extension 写成一个extension 
+
+```swift
+extension Container {
+    func average() -> Double where Item == Int {
+        var sum = 0.0
+        for index in 0..<count {
+            sum += Double(self[index])
+        }
+        return sum / Double(count)
+    }
+    func endsWith(_ item: Item) -> Bool where Item: Equatable {
+        return count >= 1 && self[count-1] == item
+    }
+}
+let numbers = [1260, 1200, 98, 37]
+print(numbers.average())
+// Prints "648.75"
+print(numbers.endsWith(37))
+// Prints "true"
+```
+
+- 在元素是整数时，给 Container 添加了一个 average() 方法
+- 在元素是可判等的情况下，添加了 endsWith(_:) 方法
+
+
+
+- 不使用上下文 where 分句，就需要写两个扩展，每一个都要用范型 where 分句
+
+```swift
+extension Container where Item == Int {
+    func average() -> Double {
+        var sum = 0.0
+        for index in 0..<count {
+            sum += Double(self[index])
+        }
+        return sum / Double(count)
+    }
+}
+extension Container where Item: Equatable {
+    func endsWith(_ item: Item) -> Bool {
+        return count >= 1 && self[count-1] == item
+    }
+}
+```
+
+- 用了上下文 where 分句， average() 和 endsWith(_:) 都写在了同一个扩展当中
+
 ## 具有泛型 Where 子句的关联类型
+
+- 场景：给关联类型添加约束
+
+- 要做一个包含遍历器的Container，要求遍历器 元素类型 = 容器元素类型
+
+```swift
+protocol Container {
+    associatedtype Item
+    mutating func append(_ item: Item)
+    var count: Int { get }
+    subscript(i: Int) -> Item { get }
+    
+    associatedtype Iterator: IteratorProtocol where Iterator.Element == Item
+    func makeIterator() -> Iterator
+}
+```
+
+- 给继承的协议中关联类型添加限定，要求 Item 遵循 Comparable ：
+
+```
+protocol ComparableContainer: Container where Item: Comparable { }
+```
+
 ## 泛型下标
 
+
+
+语法：
+
+- 在 subscript 后用尖括号来写类型占位符
+- 还可在花括号前写泛型 where 分句
+
+```swift
+extension Container {
+    subscript<Indices: Sequence>(indices: Indices) -> [Item]
+        where Indices.Iterator.Element == Int {
+            var result = [Item]()
+            for index in indices {
+                result.append(self[index])
+            }
+            return result
+    }
+}
+```
+
+- Container 协议的扩展添加了一个接收一系列索引并返回包含给定索引元素的数组
+- 泛型下班有如下限定
+  - 泛型形式参数 Indices 必须是遵循标准库中 Sequence 协议的某类型
+  - 泛型 where 分句要求序列的遍历器元素，必须为 Int 类型的
+
 # 不透明类型
+
+
+
 ## 不透明类型解决的问题
 ## 返回不透明类型
 ## 不透明类型和协议类型的区别
