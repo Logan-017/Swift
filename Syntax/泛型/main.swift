@@ -120,18 +120,18 @@ protocol Container {
     subscript(i: Int) -> Item { get }
 }
 
-//protocol SuffixableContainer: Container {
-//    associatedtype Suffix: SuffixableContainer where Suffix.Item == Item
-//    func suffix(_ size: Int) -> Suffix
-//}
+protocol SuffixableContainer: Container {
+    associatedtype Suffix: SuffixableContainer where Suffix.Item == Item
+    func suffix(_ size: Int) -> Suffix
+}
 
-//extension Stack: SuffixableContainer {
-//    func suffix(_ size: Int) -> Stack {
-//        var result = Stack()
-//        for index in (count - size)..< count {
-//            result.append(self[index])
-//        }
-//        return result
-//    }
-//}
+extension Stack: SuffixableContainer {
+    func suffix(_ size: Int) -> Stack {
+        var result = Stack()
+        for index in (count - size)..< count {
+            result.append(self[index])
+        }
+        return result
+    }
+}
 
