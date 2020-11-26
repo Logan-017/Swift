@@ -35,4 +35,3 @@ struct FilippedShape<T: Shape>: Shape {
 let flippedTriangle = FilippedShape(shape: smallTriangle)
 print(flippedTriangle.draw())
 
-

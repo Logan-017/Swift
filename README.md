@@ -8959,26 +8959,797 @@ print(type(of: twelve))
 - 不透明容器的具体类型是 [T]
 
 # 自动引用计数
+
+- Swift 使用*自动引用计数*(ARC)机制来追踪和管理你的 App 的内存
+- 当这些实例不在需要时，ARC会自动释放类实例所占用的内存。
+
+> 引用计数只应用于类的实例。结构体和枚举是值类型，不是引用类型，没有通过引用存储和传递。
+
 ## 自动引用计数的工作机制
+
+- 创建一个类的实例，ARC 分配一大块内存来存储这个实例的信息
+  - 类型信息
+  - 存储属性值的信息
+- 当实例不需要时，ARC 会释放该实例所占用的内存
+- 如果 ARC 释放了正在使用的实例内存，那么它将不会访问实例的属性，或者调用实例的方法
+  - 如果你试图访问该实例，你的app很可能会崩溃
+- ARC 会跟踪和计算当前实例被多少属性，常量和变量所引用。
+  - 只要存在对该类实例的引用，ARC 将不会释放该实例。
+  - 无论你将实例分配给属性，常量或变量，它们都会创建该实例的*强引用*
+    - 称之为“强”引用，是因它将实例保持住，只要强引用在，实例是不允许被销毁的
+
 ## 自动引用计数实践
+
+- 场景：实例内存的分配和释放操作
+
+- 展示了自动引用计数的工作机制
+
+```swift
+class Person {
+    let name: String
+    init(name: String) {
+        self.name = name
+        print("\(name) is being initialized")
+    }
+    deinit {
+        print("\(name) is being deinitialized")
+    }
+}
+```
+
+- 由于可选类型的变量会被自动初始化为一个 nil 值，目前还不会引用到 Person 类的实例。
+
+```swift
+var reference1: Person?
+var reference2: Person?
+var reference3: Person?
+```
+
+```swift
+reference1 = Person(name: "John Appleseed")
+// prints "John Appleseed is being initialized"
+```
+
+- 现在就有了一个从reference1 到该实例的强引用
+
+- 实例又会多出两个强引用：
+
+```swift
+reference2 = reference1
+reference3 = reference1
+```
+
+- 给其中两个变量赋值 nil 的方式断开两个强引用
+
+```swift
+reference1 = nil
+reference2 = nil
+```
+
+```swift
+reference3 = nil
+// prints "John Appleseed is being deinitialized"
+```
+
 ## 类实例之间的循环强引用
+
+- 场景：某个类*永远*不会变成零强引用 = 永远不会销毁
+- 循环引用：两个类实例，彼此持有对方的强引用
+
+- 循环引用解决：
+  - 定义类之间的关系为弱引用( weak )或无主引用(unowned )来代替强引用
+- 循环引用例子：
+
+```swift
+class Person {
+    let name: String
+    init(name: String) { self.name = name }
+    var apartment: Apartment?
+    deinit { print("\(name) is being deinitialized") }
+}
+ 
+class Apartment {
+    let unit: String
+    init(unit: String) { self.unit = unit }
+    var tenant: Person?
+    deinit { print("Apartment \(unit) is being deinitialized") }
+}
+```
+
+- apartment 属性是可选项，因为一个人并不总是拥有公寓
+- tenant 属性是可选的，因为一栋公寓并不总是有居民
+- 反初始化时输出信息，Person 和 Apartment 的实例是否像预期的那样被释放
+
+
+
+- 两个变量都被初始化为 nil ，这正是可选项的优点：
+
+```swift
+var john: Person?
+var unit4A: Apartment?
+```
+
+
+
+- 创建特定的 Person 和 Apartment 实例并将其赋值给 john 和unit4A 变量
+
+```swift
+john = Person(name: "John Appleseed")
+unit4A = Apartment(unit: "4A")
+```
+
+
+
+-  John 变量对Person 实例有一个强引用， unit4A 变量对 Apartment 实例有一个强引用
+
+<img src="https://docs.swift.org/swift-book/_images/referenceCycle01_2x.png" alt="../_images/referenceCycle01_2x.png" style="zoom:67%;" />
+
+
+
+- 感叹号( ! )是用来展开和访问可选变量 john 和 unit4A 里的实例的
+
+```swift
+john!.apartment = unit4A
+unit4A!.tenant = john
+```
+
+- 两个实例联系在一起之后，强引用的关系如图
+
+<img src="https://www.logcg.com/wp-content/uploads/2015/12/referenceCycle02_2x.png" alt="referenceCycle02_2x" style="zoom:50%;" />
+
+- Person 实例现在有了一个指向Apartment 实例的强引用
+- Apartment 实例也有了一个指向 Person 实例的强引用
+
+- 断开 john 和 unit4A 变量持有的强引用，引用计数并不会降零，实例也不会被 ARC 释放
+
+```swift
+john = nil
+unit4A = nil
+```
+
+- 没有任何一个反初始化器被调用
+
+- 强引用关系如下图：
+
+<img src="https://docs.swift.org/swift-book/_images/referenceCycle03_2x.png" alt="../_images/referenceCycle03_2x.png" style="zoom:50%;" />
+
 ## 解决实例之间的循环强引用
+
+- 对于生命周期中会变为 nil 的实例使用弱引用
+- 对于初始化赋值后再也不会被赋值为 nil 的实例，使用无主引用
+- 上面的 Apartment 例子中，在它的声明周期中，有时是”没有居民”的/可选的，因此适合使用弱引用来解决循环强引用。
+
 ### 弱引用
+
+- 不会对引用实例强引用，不会阻止 ARC 释放
+- 语法：声明属性或者变量时，在前面加上 weak 关键字
+- 置 nil 操作：ARC 会在**被弱引用的实例**被释放，自动地设置弱引用为 nil （由于弱引用需要允许它们的值为 nil ，它们一定得是可选类型）
+- 检查弱引用的值是否存在，就像其他可选项的值一样，并且你将永远不会遇到“野指针”
+
+> 在 ARC 给弱引用设置 nil 时不会调用属性观察者。
+
+- Apartment 的 tenant 属性被声明为弱引用：
+
+```swift
+class Person {
+    let name: String
+    init(name: String) { self.name = name }
+    var apartment: Apartment?
+    deinit { print("\(name) is being deinitialized") }
+}
+ 
+class Apartment {
+    let unit: String
+    init(unit: String) { self.unit = unit }
+    weak var tenant: Person?
+    deinit { print("Apartment \(unit) is being deinitialized") }
+}
+```
+
+```swift
+var john: Person?
+var unit4A: Apartment?
+ 
+john = Person(name: "John Appleseed")
+unit4A = Apartment(unit: "4A")
+ 
+john!.apartment = unit4A
+unit4A!.tenant = john
+```
+
+<img src="https://docs.swift.org/swift-book/_images/weakReference01_2x.png" alt="../_images/weakReference01_2x.png" style="zoom: 50%;" />
+
+- Person 实例对 Apartment 实例强引用， Apartment 实例对Person 实例是*弱*引用
+- 当你断开 john 变量所保持的强引用时，再也没有指向 Person 实例的强引用
+- 实例会被释放：
+
+```swift
+john = nil
+// prints "John Appleseed is being deinitialized"
+```
+
+- 没有强引用到 Person 它被释放掉了，并且 tenant 属性被设置为 nil 
+
+<img src="https://docs.swift.org/swift-book/_images/weakReference02_2x.png" alt="../_images/weakReference02_2x.png" style="zoom:50%;" />
+
+```swift
+unit4A = nil
+// prints "Apartment 4A is being deinitialized"
+```
+
+- 没有指向 Apartment 实例的强引用，该实例也会被释放：
+
+<img src="https://cnswift.content-delivery.top/wp-content/uploads/2015/08/weakReference03_2x.png" alt="weakReference03_2x" style="zoom:50%;" />
+
+> 注意
+>
+> 在使用垃圾回收机制的系统中，由于没有强引用的对象会在内存有压力时触发垃圾回收而被释放，弱指针有时用来实现简单的缓存机制。总之，对于 ARC 来说，一旦最后的强引用被移除，值就会被释放，这样的话弱引用就不再适合这类用法了。
+
 ### 无主引用
-### 无主引用和隐式解包可选值属性
+
+- 使用场景：非可选类型
+- 优点：不需要在使用它的时候将它展开
+- 缺点：ARC 无法在实例被释放后将无主引用设为 nil（因非可选类型变量不允许赋值为 nil）
+
+> 如果你试图在实例的被释放后访问无主引用，那么你将触发运行时错误。
+
+-  Customer 和 CreditCard ，模拟了银行客户和客户的信用卡
+
+- 一个客户可能有或者没有信用卡，但是一张信用卡总是关联着一个客户
+  - 新 CreditCard 实例只有通过 number 值和 customer 实例到CreditCard 的初始化器才能创建。
+  - 确保 CreditCard 实例创建时总有 customer 实例
+
+```swift
+class Customer {
+    let name: String
+    var card: CreditCard?
+    init(name: String) {
+        self.name = name
+    }
+    deinit { print("\(name) is being deinitialized") }
+}
+ 
+class CreditCard {
+    let number: UInt64
+    unowned let customer: Customer
+    init(number: UInt64, customer: Customer) {
+        self.number = number
+        self.customer = customer
+    }
+    deinit { print("Card #\(number) is being deinitialized") }
+}
+```
+
+> 注意: CreditCard 类的 number 属性定义为 UInt64 类型而不是 Int ，以确保 number 属性的存储量在32位和64位系统上都能足够容纳16位的卡号
+
+```swift
+var john: Customer?
+```
+
+```swift
+john = Customer(name: "John Appleseed")
+john!.card = CreditCard(number: 1234_5678_9012_3456， customer: john!)
+```
+
+- 关联了两个实例后的图示关系:
+
+<img src="https://docs.swift.org/swift-book/_images/unownedReference01_2x.png" alt="../_images/unownedReference01_2x.png" style="zoom:50%;" />
+
+- 断开 john 变量持有的强引用时，再也没有指向CreditCard 实例的强引用，该实例也随之被释放了
+
+<img src="https://docs.swift.org/swift-book/_images/unownedReference02_2x.png" alt="../_images/unownedReference02_2x.png" style="zoom:50%;" />
+
+```swift
+john = nil
+// prints "John Appleseed is being deinitialized"
+// prints "Card #1234567890123456 is being deinitialized"
+```
+
+### 无主可选引用
+
+- 场景：（非可选）无主引用不能为 nil，**无主可选引用可为 nil** （但不会自动置 nil）
+
+- 使用无主可选引用时，需保证引用合法对象或 nil
+
+- 追踪学校特定部门提供的课程
+
+```swift
+class Department {
+    var name: String
+    var courses: [Course]
+    init(name: String) {
+        self.name = name
+        self.courses = []
+    }
+}
+ 
+class Course {
+    var name: String
+    unowned var department: Department
+    unowned var nextCourse: Course?
+    init(name: String, in department: Department) {
+        self.name = name
+        self.department = department
+        self.nextCourse = nil
+    }
+}
+```
+
+- Course 有两个无主引用，一个是到部门，另一个是下一门学生要上的课程
+
+- 每一门课程都是某些部门的一部分，所以 department 不是可选的
+- 课程并不包含推荐的后续课程， nextCourse 是可选的
+
+```swift
+let department = Department(name: "Horticulture")// 创建了一个部门以及它的三个课程
+ 
+let intro = Course(name: "Survey of Plants", in: department)
+let intermediate = Course(name: "Growing Common Herbs", in: department)
+let advanced = Course(name: "Caring for Tropical Plants", in: department)
+ // 初级和中级课程都有一个建议的后续课程存放在它们的 nextCourse 属性中
+intro.nextCourse = intermediate
+intermediate.nextCourse = advanced
+department.courses = [intro, intermediate, advanced]
+```
+
+- nextCourse 维护了一个无主可选引用，指向了学生在完成本课程后应该继续的课程
+
+<img src="https://docs.swift.org/swift-book/_images/unownedOptionalReference_2x.png" alt="../_images/unownedOptionalReference_2x.png" style="zoom: 50%;" />
+
+- unowned 不能自动置nil，所以还是需要保证 nextCourse 指向了一个没有被释放的课程
+- 从 department.courses 删除课程时，同样要移除其他课程对这个课程的引用
+
+> 上述可选值的类型是 Optional ，也就是 Swift 标准库中的枚举。
+>
+> 总之，可选项是值类型不能被标记为unowned 这个规则中的例外。
+>
+> 包裹了类的可选项并不使用引用计数，所以你不需要对可选项维持强引用。
+
+### 无主引用和隐式解包可选值属性 
+
+- 循环引用-解决
+  - 弱引用来解决：两个属性的值都允许为 nil
+    - Person 和 Apartment 
+  - 无主引用解决：一个属性的值允许为 nil ，而另一个属性的值不允许为 nil
+    - Customer 和 CreditCard
+  - 一个类用无主属性，另一个类用隐式展开的可选属性：
+    - 两个属性都必须有值，并且初始化完成后永远不会为 nil 
+- 两个类， Country 和 City 
+  - 每个国家必须有首都，每个城市必须属于一个国家
+
+```swift
+class Country {
+    let name: String
+    var capitalCity: City! // 有一个默认值 nil,保证 Country 的实例完全初始化完后， Country 的初始化器才能把 self 传给 City 的初始化器
+    init(name: String, capitalName: String) {
+        self.name = name // 一旦 name 属性被赋值后， Country 的初始化器就能引用并传递隐式的 self
+        self.capitalCity = City(name: capitalName, country: self)
+    }
+}
+ 
+class City {
+    let name: String
+    unowned let country: Country
+    init(name: String, country: Country) {
+        self.name = name
+        self.country = country
+    }
+}
+```
+
+- 以上的意义：通过一条语句同时创建 Country 和 City 的实例，而不产生循环强引用， capitalCity 的属性能被直接访问，二不需要可选绑定、强制展开
+
+```swift
+var country = Country(name: "Canada", capitalName: "Ottawa")
+print("\(country.name)'s capital city is called \(country.capitalCity.name)")
+// prints "Canada's capital city is called Ottawa"
+```
+
+- 用隐式展开的可选属性的意义
+  - 满足了两段式类初始化器的需求
+  - capitalCity 属性初始化完成后，能像非可选项一样使用，同时还避免了循环强引用
+
 ## 闭包的循环强引用
+
+- 闭包循环引用：比属性循环引用，多了变量捕获
+- 场景：闭包赋值给实例属性，闭包又捕获这个实例
+- 闭包捕获实例场景：
+  - 闭包函数体访问了实例某个属性，比如self.someProperty
+  - 闭包调用了一个实例的方法，例如self.someMethod()
+- 闭包循环引用本质：闭包和类，都是*引用类型*
+
+
+
+- 用一种简单的模型表示 HTML 中的一个单独的元素：
+
+```swift
+class HTMLElement {
+    
+    let name: String // 元素的名称，如表示标题元素的 "h1" 、代表段落元素的 "p" 、或者代表换行元素的 "br" 
+    let text: String?// 可选的属性 text ，它可以用来设置和展现 HTML  元素的文本
+    
+  // 这个属性引用了一个将 name 和 text 组合成 HTML  字符串片段的闭包
+    lazy var asHTML: () -> String = {
+        if let text = self.text {
+            return "<\(self.name)>\(text)</\(self.name)>"
+        } else {
+            return "<\(self.name) />"
+        }
+    }
+    
+    init(name: String, text: String? = nil) {
+        self.name = name
+        self.text = text
+    }
+    
+    deinit {
+        print("\(name) is being deinitialized")
+    }
+    
+}
+```
+
+- 由于 asHTML 是闭包，用自定义的闭包来取代默认值
+
+```swift
+let heading = HTMLElement(name: "h1")
+let defaultText = "some default text"
+heading.asHTML = {
+    return "<\(heading.name)>\(heading.text ?? defaultText)</\(heading.name)>"
+}
+print(heading.asHTML())
+// prints "<h1>some default text</h1>"
+```
+
+> asHTML 声明为 lazy 属性，因为只有当元素确实需要处理为 HTML 输出的字符串时，才需要使用asHTML 。
+>
+> 
+>
+> 实际上 asHTML 是**延迟加载属性**，意味在默认闭包可用 self ，因只有当初始化完成以及 self 确实存在后，才能访问延迟加载属性。
+
+- 用 HTMLElement 类创建实例并打印消息
+
+```swift
+var paragraph: HTMLElement? = HTMLElement(name: "p", text: "hello, world")
+print(paragraph!.asHTML())
+// prints"hello, world"
+```
+
+
+
+- HTMLElement 类产生了和 asHTML 默认值的闭包之间的循环强引用
+
+<img src="https://docs.swift.org/swift-book/_images/closureReferenceCycle01_2x.png" alt="../_images/closureReferenceCycle01_2x.png" style="zoom:50%;" />
+
+-  asHTML 属性持有闭包的强引用
+- 闭包在其闭包体内使用了 self （引用了 self.name 和 self.text ），因此闭包捕获了 self ，这意味着闭包又反过来持有了 HTMLElement 实例的强引用
+
+> 尽管闭包多次引用了 self ，它只捕获 HTMLElement 实例的一个强引用。
+
+```swift
+paragraph = nil
+// 实例和它的闭包都不会被释放，也是因为循环强引用
+```
+
+- HTMLElement 的反初始化器中的消息并没有被打印，证明了 HTMLElement 实例并没有被销毁
+
 ## 解决闭包的循环强引用
-### 定义捕获列表
+
+- 场景：通过弱/无主引用，标记闭包捕获列表的变量，解决闭包和实例的循环引用
+
+> 建议显式使用 self.someProperty 或者 self.someMethod （而不只是someProperty 或 someMethod ），有助于提醒捕获了 self ，避免循环引用
+
+### 定义捕获列表（ closuer capture list ）
+
+语法：
+
+- weak / unowned  + 类实例的引用（如 self ） / 初始化过的变量（如 delegate = self.delegate! ）
+- 中括号包裹，逗号隔开
+
+- 放形式参数和返回值的前边
+
+```swift
+lazy var someClosure: (Int, String) -> String = {
+    [unowned self, weak delegate = self.delegate!] (index: Int, stringToProcess: String) -> String in
+    // closure body goes here
+}
+```
+
+- 没有参数列表和返回值，把捕获列表放在关键字 in 前边
+
+```swift
+lazy var someClosure: () -> String = {
+    [unowned self, weak delegate = self.delegate!] in
+    // closure body goes here
+}
+```
+
 ### 弱引用和无主引用
 
+- 闭包和捕获的实例总是互相引用并总是同时释放时：
+  - 将闭包内的捕获定义为无主引用
+- 被捕获的引用可能会变为 nil 时
+  - 定义一个弱引用的捕获
+
+```swift
+如果被捕获的引用永远不会变为 nil ，应该用无主引用而不是弱引用。
+```
+
+- HTMLElement 例子中，无主引用是正确的解决循环强引用的方法
+
+```swift
+class HTMLElement {
+    
+    let name: String
+    let text: String?
+    
+    lazy var asHTML: () -> String = {
+        [unowned self] in
+        if let text = self.text {
+            return "<\(self.name)>\(text)</\(self.name)>"
+        } else {
+            return "<\(self.name) />"
+        }
+    }
+    
+    init(name: String, text: String? = nil) {
+        self.name = name
+        self.text = text
+    }
+    
+    deinit {
+        print("\(name) is being deinitialized")
+    }
+    
+}
+```
+
+- 创建并打印 HTMLElement 实例：
+
+```swift
+var paragraph: HTMLElement? = HTMLElement(name: "p", text: "hello, world")
+print(paragraph!.asHTML())
+// prints "<p>hello, world</p>"
+```
+
+- 使用捕获列表后引用关系
+
+![../_images/closureReferenceCycle02_2x.png](https://docs.swift.org/swift-book/_images/closureReferenceCycle02_2x.png)
+
+- 闭包以无主引用的形式捕获 self ，并不会持有 HTMLElement 实例的强引用
+
+```swift
+paragraph = nil
+// prints "p is being deinitialized"
+```
+
 # 内存安全
+
+- Swift 安全性
+  - 使用前就初始化
+  - 内存在变量释放后不能再访问
+  - 数组会检查越界错误
+- Swift 还通过要求标记内存位置来确保代码对内存有独占访问权，以确保了同一内存多访问时不会冲突。
+  - 了解一下什么情况下会潜在导致冲突
+  - 避免写出对内存访问冲突的代码
+
 ## 理解内存访问冲突
+
+- 出现场景：给变量赋值，或者传递参数给函数
+- 比如说，下面代码同时包含了读取访问和写入访问：
+
+```swift
+// 向 one 所在的内存区域发起一次写操作
+var one = 1
+
+// 向 one 所在的内存区域发起一次读操作
+print("We're number \(one)!")
+```
+
+- 添加预算项进入表里的时候，它只是在一个临时的，错误的状态，因为总数还没有被更新
+- 在添加数据的过程中读取总数就会读取到错误的信息。
+
+![../_images/memory_shopping_2x.png](https://docs.swift.org/swift-book/_images/memory_shopping_2x.png)
+
+> 这里访问冲突的讨论是在单线程的情境下讨论的，并没有使用并发或者多线程。
+>
+> 在单线程遇到内存访问冲突，Swift 会保证你在要么编译时要么运行时得到错误。
+>
+> 对于多线程的代码，可以使用 Thread Sanitizer 去帮助检测多线程的冲突
+
 ### 内存访问性质
+
+- 冲突会在两个访问，同时满足以下条件时发生：
+  - 至少一个是写入访问；
+  - 它们访问的是同一块内存；
+  - 它们的访问时间重叠。
+- 读和写访问的区别
+  - 写访问会改变存储地址，而读操作不会（存储地址是指向正在访问的东西（例如一个变量，常量或者属性）的位置的值）
+- 内存访问的时长要么是瞬时的，要么是长期的
+- 瞬时访问：一个访问在启动后其他代码不能执行直到它结束后才能
+- 两个即时访问不能同时发生
+- 大多数内存访问都是即时
+
+```swift
+func oneMore(than number: Int) -> Int {
+    return number + 1
+}
+
+var myNumber = 1
+myNumber = oneMore(than: myNumber)
+print(myNumber)
+// 打印“2”
+```
+
+- 长期访问：会在别的代码执行时持续进行
+  - 长期访问，可被别的长期访问、访问重叠
+- 重叠访问场景
+  - 使用 in-out 参数的函数和方法
+  - 结构体的 mutating 方法里
+
 ## In-Out 参数的访问冲突
+
+- 冲突本质：一个函数会对它所有的 in-out 参数进行长期**写**访问
+- 顺序：
+  - 所有非 in-out 参数处理完之后开始，直到函数执行完毕为止
+  - 有多个 in-out 参数，则写访问开始的顺序与参数的顺序一致
+- 不能在访问以 in-out 形式传入后的原变量，即使作用域原则和访问权限允许
+
+```swift
+var stepSize = 1// 全局变量
+
+func increment(_ number: inout Int) {
+    number += stepSize //  stepSize 的读访问与 number 的写访问重叠了
+}
+
+increment(&stepSize)
+// 错误：stepSize 访问冲突
+```
+
+- `number` 和 `stepSize` 都指向了同一个存储地址
+- 同一块内存的读和写访问重叠了
+
+<img src="https://docs.swift.org/swift-book/_images/memory_increment_2x.png" alt="../_images/memory_increment_2x.png" style="zoom:50%;" />
+
+- 解决 inout 参数访问冲突：拷贝一份 `stepSize`
+
+```swift
+// Make an explicit copy.
+var copyOfStepSize = stepSize
+increment(&copyOfStepSize)
+ 
+// Update the original.
+stepSize = copyOfStepSize
+// stepSize is now 2
+// stepSize is now 2
+```
+
+- 读访问在写操作之前就已经结束了，所以不会有冲突。
+
+
+
+- 同一个函数的多个 in-out 参数里传入同一个变量，产生冲突
+
+```swift
+func balance(_ x: inout Int, _ y: inout Int) {
+    let sum = x + y
+    x = sum / 2
+    y = sum - x
+}
+var playerOneScore = 42
+var playerTwoScore = 30
+balance(&playerOneScore, &playerTwoScore)  // 正常, 访问的是不同的内存位置
+balance(&playerOneScore, &playerOneScore)// 同时访问同一个的存储地址。
+// 错误：playerOneScore 访问冲突
+```
+
+> 操作符也是函数，也会对 in-out 参数进行长期访问
+>
+> `balance(_:_:)` 是一个名为 `<^>` 的操作符函数，那么 `playerOneScore <^> playerOneScore` 也会造成像 `balance(&playerOneScore, &playerOneScore)` 一样的冲突
+
 ## 方法里 self 的访问冲突
+
+- 本质：结构体的 mutating 方法会在调用期间对 `self` 进行**写**访问
+
+```swift
+struct Player {
+    var name: String
+    var health: Int
+    var energy: Int
+
+    static let maxHealth = 10
+    mutating func restoreHealth() {
+        health = Player.maxHealth
+    }
+}
+```
+
+- 不管有没有调用 self，只要 标记了mutating
+  - 在上面的 `restoreHealth()` 方法里，一个对于 `self` 的写访问会从方法开始直到方法 return
+  - 不可以对 `Player` **实例的属性**发起重叠的访问
+
+
+
+- `shareHealth(with:)` 接受另一个 `Player` 的实例作为 in-out 参数，有访问重叠的可能性
+
+```swift
+
+extension Player {
+    mutating func shareHealth(with teammate: inout Player) {
+        balance(&teammate.health, &health)
+    }
+}
+
+var oscar = Player(name: "Oscar", health: 10, energy: 10)
+var maria = Player(name: "Maria", health: 5, energy: 10)
+oscar.shareHealth(with: &maria)  // 正常
+```
+
+- 把 `oscar` 玩家的血量分享给 `maria` 玩家
+  - 方法调用时会对 `oscar` 发起写访问，在 mutating 方法里 `self` 就是 `oscar`
+  - `maria` 也会发起写访问，因为 `maria` 作为 in-out 参数传入
+  - 访问内存的不同位置。即使两个写访问重叠了，它们也不会冲突
+
+![img](https://docs.swift.org/swift-book/_images/memory_share_health_maria_2x.png)
+
+```swift
+oscar.shareHealth(with: &oscar)
+// 错误：oscar 访问冲突
+```
+
+- `self` 和 `teammate` 都指向了同一个存储地址
+- 同一块内存同时进行两个写访问，并且它们重叠了，就此产生了冲突
+
+<img src="https://docs.swift.org/swift-book/_images/memory_share_health_oscar_2x.png" alt="../_images/memory_share_health_oscar_2x.png" style="zoom:50%;" />
+
+
+
 ## 属性的访问冲突
 
+- 出现场景：
+  - 值类型：结构体，元组和枚举，由多个独立的值组成
+  - 修改值的一部分都是对整个值的修改
+  - 一个属性的读或写访问都需要访问整一个值
+- 如，元组元素的写访问重叠会产生冲突：
+
+```swift
+var playerInformation = (health: 10, energy: 20)
+balance(&playerInformation.health, &playerInformation.energy)
+// 错误：playerInformation 的属性访问冲突
+```
+
+- 传入同一元组的元素对 `balance(_:_:)` 进行调用，产生了冲突，因为 `playerInformation` 的访问产生了写访问重叠
+- 作为 in-out 参数传入
+- 对于元组元素的写访问都需要对整个元组发起写访问
+
+
+
+- 展示错误：对于一个存储在全局变量里的结构体属性的写访问重叠  (struct Player)
+
+```swift
+var holly = Player(name: "Holly", health: 10, energy: 10)
+balance(&holly.health, &holly.energy)  // 错误
+```
+
+- 解决：将变量 `holly` 改为本地变量，而非全局变量，
+
+```swift
+func someFunction() {
+    var oscar = Player(name: "Oscar", health: 10, energy: 10)
+    balance(&oscar.health, &oscar.energy)  // 正常
+}
+// 两个存储属性任何情况下都不会相互影响(全局变量，传指针，局部变量传值)
+```
+
+- 遵循下面原则，编译器可保证结构体属性的重叠访问安全
+  - 访问的是实例的存储属性，而非计算属性或类的属性
+  - 结构体是本地变量的值，而非全局变量
+  - 结构体要么没有被闭包捕获，要么只被非逃逸闭包捕获了
+
 # 访问控制
+
+- 
+
 ## 模块和源文件
 ## 访问级别
 ### 访问级别基本原则
