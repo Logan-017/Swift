@@ -10134,27 +10134,448 @@ extension SomeStruct: SomeProtocol {
 
 > 这条规则也适用于为满足协议遵循而将类型别名用于关联类型的情况。
 
-# 高级运算符
+# 高级运算符 - Advanced Operators
 
-- 
+- Swift 运算符
+  - 基本运算符
+  - 高级运算符（包括 C 或 Objective-C 所有按位和移位运算符。）
+- 与 C 的算术运算符不同，Swift 算术运算符默认是不会溢出的。
+  - 所有溢出行为都会被捕获并报告为错误。
+  - 如果想让系统允许溢出行为，可用 Swift 支持溢出的运算符
+  - 如溢出加法运算符（`&+`）。所有溢出运算符都以 `&` 开头的。
+- 中缀、前缀、后缀和赋值运算符，它们具有自定义的优先级与关联值。
+- 可扩展已有的类型以支持自定义运算符。
 
 ## 位运算符
+- 操作数据结构中，每个独立的比特位
+- 使用场景：
+  - 底层开发中，比如图形编程和创建设备驱动
+  - 处理外部资源的原始数据，对自定义通信协议传输的数据进行编码和解码
+- Swift 支持 C 语言中的全部位运算符
+
 ### Bitwise NOT Operator（按位取反运算符）
+
+- *按位取反运算符（**`~`**）*
+  - 对一个数值的全部比特位进行取反：
+
+<img src="https://docs.swift.org/swift-book/_images/bitwiseNOT_2x.png" alt="img" style="zoom:50%;" />
+
+- 前缀运算符，直接放在运算数之前，并且它们之间不能添加任何空格：
+
+```swift
+let initialBits: UInt8 = 0b00001111
+let invertedBits = ~initialBits // 等于 0b11110000
+```
+
 ### Bitwise AND Operator（按位与运算符）
+
+- *按位与运算符（**`&`**）* 对两个数的比特位进行合并
+- 返回一个新的数，只有当两个数的对应位*都*为 `1` 的时候，新数的对应位才为 `1`：
+
+<img src="https://docs.swift.org/swift-book/_images/bitwiseAND_2x.png" alt="img" style="zoom:50%;" />
+
+```swift
+let firstSixBits: UInt8 = 0b11111100
+let lastSixBits: UInt8  = 0b00111111
+let middleFourBits = firstSixBits & lastSixBits // 等于 00111100
+```
+
 ### Bitwise OR Operator（按位或运算符）
+
+- *按位或运算符（**`|`**）*可以对两个数的比特位进行比较
+- 只要两个数的对应位中有*任意一个*为 `1` 时，新数的对应位就为 `1`：
+
+<img src="https://docs.swift.org/swift-book/_images/bitwiseOR_2x.png" alt="img" style="zoom:50%;" />
+
+```swift
+let someBits: UInt8 = 0b10110010
+let moreBits: UInt8 = 0b01011110
+let combinedbits = someBits | moreBits // 等于 11111110
+```
+
 ### Bitwise XOR Operator（按位异或运算符）
+
+- *按位异或运算符*，或称“排外的或运算符”、“互斥或”（`^`）
+- 当两个数的对应位不相同时，新数的对应位就为 `1`，并且对应位相同时则为 `0`：
+
+<img src="https://docs.swift.org/swift-book/_images/bitwiseXOR_2x.png" alt="img" style="zoom:50%;" />
+
+```swift
+let firstBits: UInt8 = 0b00010100
+let otherBits: UInt8 = 0b00000101
+let outputBits = firstBits ^ otherBits // 等于 00010001
+```
+
 ### Bitwise Left and Right Shift Operators（按位左移、右移运算符）
+- *按位左移运算符（**`<<`**）* 和 *按位右移运算符（**`>>`**）*
+- 对一个数的所有位进行指定位数的左移和右移
+- 本质：相当于对这个数进行乘以 2 或除以 2 的运算
+  - 左移一位，等价于将这个数乘以 2
+  - 右移一位，等价于将这个数除以 2。
+
 #### 无符号整数的移位运算
+
+- 无符号整数进行移位的规则：
+
+1. 已存在的位按指定的位数进行左移和右移。
+2. 任何因移动而超出整型存储范围的位都会被丢弃。
+3. 用 `0` 来填充移位后产生的空白位。
+
+
+
+- 蓝色的数字是被移位的，灰色的数字是被抛弃的，橙色的 `0` 则是被填充进来的：
+
+<img src="https://docs.swift.org/swift-book/_images/bitshiftUnsigned_2x.png" alt="img" style="zoom:50%;" />
+
+- 演示了 Swift 中的移位运算：
+
+```swift
+let shiftBits: UInt8 = 4 // 即二进制的 00000100
+shiftBits << 1           // 00001000
+shiftBits << 2           // 00010000
+shiftBits << 5           // 10000000
+shiftBits << 6           // 00000000
+shiftBits >> 2           // 00000001
+```
+
+- 用移位运算对其他的数据类型进行编码和解码：
+
+```swift
+let pink: UInt32 = 0xCC6699
+let redComponent = (pink & 0xFF0000) >> 16  // redComponent 是 0xCC，即 204
+let greenComponent = (pink & 0x00FF00) >> 8 // greenComponent 是 0x66， 即 102
+let blueComponent = pink & 0x0000FF         // blueComponent 是 0x99，即 153
+```
+
 #### 有符号整数的移位运算
-## 溢出运算符
+
+- 以下的示例基于 8 比特的有符号整数，但原理对任何位数的有符号整数都是通用的。
+- 有符号整数用第 1 个比特位（通常被称为*符号位*）表示正负。
+  - 符号位为 `0` 代表正数，为 `1` 代表负数。
+- 其余的比特位（通常被称为*数值位*）存储了实际的值。
+- 有符号正整数和无符号数的存储方式是一样的，都是从 `0`开始算起。
+
+
+
+- 这是值为 `4` 的 `Int8` 型整数的二进制位表现形式：
+
+<img src="https://docs.swift.org/swift-book/_images/bitshiftSignedFour_2x.png" alt="img"  />
+
+- 值为 `-4` 的 `Int8` 型整数的二进制表现形式：
+
+![img](https://docs.swift.org/swift-book/_images/bitshiftSignedMinusFour_2x.png)
+
+- 符号位为 `1`，说明这是一个负数，另外 7 个位则代表了数值 `124`（即 `128 - 4`）的二进制表示：
+
+![img](https://docs.swift.org/swift-book/_images/bitshiftSignedMinusFourValue_2x.png)
+
+- 负数的表示通常被称为*二进制补码*
+  - 存储最大值： `2` 的 `n` 次方减去其实际值的绝对值
+  - 一个 8 比特位的数有 7 个比特位是数值位，所以是 `2` 的 `7` 次方，即 `128`。
+- 对 `-1` 和 `-4` 进行加法运算
+- 只需要对这两个数的全部 8 个比特位执行标准的二进制相加（包括符号位）
+- 将计算结果中超出 8 位的数值丢弃：
+
+![img](https://docs.swift.org/swift-book/_images/bitshiftSignedAddition_2x.png)
+
+- 二进制补码可以使负数的按位左移和右移运算得到跟正数同样的效果
+- 要达到此目的，对有符号整数的右移有一个额外的规则：
+  - 当对有符号整数进行按位右移运算时，遵循与无符号整数相同的规则
+  - 但是对于移位产生的空白位使**用*符号位*进行填充，而不是用 `0`。**
+
+![img](https://docs.swift.org/swift-book/_images/bitshiftSigned_2x.png)
+
+- 这通常被称为*算术移位*。
+- 移位的过程中保持符号位不变，意味着负整数在接近零的过程中会一直保持为负。
+
+## 溢出运算符 - Overflow Operators
+
+- Swift 溢出会直接报错
+
+- Int16 有符号整数范围是 -32768 到 32767 ，当为一个Int16 型变量赋的值超过这个范围时，系统就会报错：
+
+```swift
+var potentialOverflow = Int16.max
+// potentialOverflow equals 32767, which is the maximum value an Int16 can hold
+potentialOverflow += 1
+// this causes an error
+```
+
+- 故意想要溢出来截断可用位的数字时，也可以选择这么做而非报错
+- Swift 提供三个算数*溢出运算符*来让系统支持整数溢出运算。这些运算符都是以 & 开头的：
+  - 溢出加法 （ &+ ）
+  - 溢出减法 （ &- ）
+  - 溢出乘法 （ &* ）
+
 ### 数值溢出
+
+- 上溢或者下溢。
+
+- 对一个无符号整数使用溢出加法（`&+`）进行上溢运算时会发生什么：
+
+```swift
+var unsignedOverflow = UInt8.max
+// unsignedOverflow 等于 UInt8 所能容纳的最大整数 255
+unsignedOverflow = unsignedOverflow &+ 1
+// 此时 unsignedOverflow 等于 0
+```
+
+- 如下图所示。数值溢出后，仍然留在 `UInt8` 边界内的值是 `00000000`，也就是十进制数值的 `0`。
+
+![img](https://docs.swift.org/swift-book/_images/overflowAddition_2x.png)
+
+- 使用溢出减法运算符（`&-`）的例子：
+
+```swift
+var unsignedOverflow = UInt8.min
+// unsignedOverflow 等于 UInt8 所能容纳的最小整数 0
+unsignedOverflow = unsignedOverflow &- 1
+// 此时 unsignedOverflow 等于 255
+```
+
+- 对其进行减 `1` 运算时，数值会产生下溢并被截断为 `11111111`， 也就是十进制数值的 `255`
+
+![img](https://docs.swift.org/swift-book/_images/overflowUnsignedSubtraction_2x.png)
+
+
+
+- 溢出也会发生在有符号整型上。
+  - 针对有符号整型的所有溢出加法或者减法运算都是按位运算的方式执行的
+  - 符号位也需要参与计算，正如 按位左移、右移运算符 所描述的。
+
+```swift
+var signedOverflow = Int8.min
+// signedOverflow 等于 Int8 所能容纳的最小整数 -128
+signedOverflow = signedOverflow &- 1
+// 此时 signedOverflow 等于 127
+```
+
+- `Int8` 型整数能容纳的最小值是 `-128`，以二进制表示即 `10000000`。当使用溢出减法运算符对其进行减 `1` 运算时，符号位被翻转，得到二进制数值 `01111111`，也就是十进制数值的 `127`，这个值也是 `Int8` 型整所能容纳的最大值。
+
+<img src="https://docs.swift.org/swift-book/_images/overflowSignedSubtraction_2x.png" style="zoom:67%;" />
+
+- 对于无符号与有符号整型数值来说，当出现上溢时，它们会从数值所能容纳的最大数变成最小数。
+- 当发生下溢时，它们会从所能容纳的最小数变成最大数。
+
 ## 优先级和结合性
+
+- 场景：计算顺序
+
+- 高优先级的运算符会先被计算
+- *结合性*定义了**相同优先级的运算符**是如何结合的，是与左边结合为一组，还是与右边结合为一组。
+
+```swift
+2 + 3 % 4 * 5
+// 结果是 17
+```
+
+- 从左到右进行运算
+  - 2 + 3 = 5
+  - 5 % 4 = 1
+  - 1 * 5 = 5
+- 与 C 语言类似，在 Swift 中，乘法运算符（`*`）与取余运算符（`%`）的优先级高于加法运算符（`+`）
+- 乘法运算与取余运算的优先级*相同*
+
+- 为这两部分表达式都隐式地加上括号：
+
+```swift
+2 + ((3 % 4) * 5)
+```
+
+- `(3 % 4)` 等于 `3`，所以表达式相当于：
+
+```swift
+2 + (3 * 5)
+```
+
+- `3 * 5` 等于 `15`，所以表达式相当于：
+
+```swift
+2 + 15
+```
+
+- 因此计算结果为 `17`。
+
 ## 运算符函数
+
+- 运算符*重载*：类和结构体，为现有运算符提供自定义的实现
+- 让自定义的结构体支持加法运算符（`+`）
+- *中缀*运算符：算术加法运算符是一个*二元运算符*，因为它是对两个值进行运算，出现在两个值中间。
+
+
+
+- 定义了一个名为 `Vector2D` 的结构体用来表示二维坐标向量 `(x, y)`
+- 定义了一个可以将两个 `Vector2D` 结构体实例进行相加的*运算符函数*：
+
+```swift
+struct Vector2D {
+    var x = 0.0, y = 0.0
+}
+
+extension Vector2D {
+  // 接收两个类型为 Vector2D 的参数，同时有一个 Vector2D 类型的返回值
+    static func + (left: Vector2D, right: Vector2D) -> Vector2D {
+        return Vector2D(x: left.x + right.x, y: left.y + right.y)
+    }
+}
+```
+
+- 因为加法运算并**不是一个向量必需的功能**，所以这个类方法被定义在 `Vector2D` 的一个扩展中
+- 函数返回一个新的 `Vector2D` 实例，这个实例的 `x` 和 `y` 分别等于作为参数的两个实例的 `x` 和 `y` 的值之和
+
+
+
+- 可以在任意两个 `Vector2D` 实例中间作为中缀运算符来使用
+
+```swift
+let vector = Vector2D(x: 3.0, y: 1.0)
+let anotherVector = Vector2D(x: 2.0, y: 4.0)
+let combinedVector = vector + anotherVector
+// combinedVector 是一个新的 Vector2D 实例，值为 (5.0, 5.0)
+```
+
+- 例子实现两个向量 `(3.0，1.0)` 和 `(2.0，4.0)` 的相加，并得到新的向量 `(5.0，5.0)`。这个过程如下图示：
+
+<img src="https://docs.swift.org/swift-book/_images/vectorAddition_2x.png" alt="img" style="zoom: 50%;" />
+
 ### 前缀和后缀运算符
+
+- 一元运算符只运算一个值
+  - 运算符出现在值之前时，它就是*前缀*的（例如 `-a`）
+  - 出现在值之后时，它就是*后缀*的（例如 `b!`）
+
+- 语法：在声明运算符函数的时候在 `func` 关键字之前指定 `prefix` 或者 `postfix` 修饰符：
+
+```swift
+extension Vector2D {
+    static prefix func - (vector: Vector2D) -> Vector2D {
+        return Vector2D(x: -vector.x, y: -vector.y)
+    }
+}
+```
+
+```swift
+let positive = Vector2D(x: 3.0, y: 4.0)
+let negative = -positive
+// negative 是一个值为 (-3.0, -4.0) 的 Vector2D 实例
+let alsoPositive = -negative
+// alsoPositive 是一个值为 (3.0, 4.0) 的 Vector2D 实例
+```
+
 ### 复合赋值运算符
+
+- 复合赋值运算符：赋值运算符（`=`）与其它运算符进行结合
+  - 如，将加法与赋值结合成加法赋值运算符（`+=`）
+- 实现的时候，需要把运算符的左参数设置成 `inout` 类型，因为这个参数的值会在运算符函数内直接被修改
+
+```swift
+extension Vector2D {
+    static func += (left: inout Vector2D, right: Vector2D) {
+        left = left + right
+    }
+}
+```
+
+- 加法运算在之前已经定义过了，所以在这里无需重新定义
+- 直接利用现有的加法运算符函数，用它来对左值和右值进行相加，并再次赋值给左值
+
+```swift
+var original = Vector2D(x: 1.0, y: 2.0)
+let vectorToAdd = Vector2D(x: 3.0, y: 4.0)
+original += vectorToAdd
+// original 的值现在为 (4.0, 6.0)
+```
+
+> 不能对默认的赋值运算符（`=`）进行重载
+>
+> 只有复合赋值运算符可以被重载
+>
+> 也无法对三元条件运算符 （`a ? b : c`） 进行重载
+
 ### 等价运算符
+
+- 等价运算符通常被称为*相等*运算符（`==`）与*不等*运算符（`!=`）
+- 场景：自定义的类和结构体对*等价运算符*进行默认实现
+- 实现的方法与其它中缀运算符一样, 并且增加对标准库 `Equatable` 协议的遵循：
+
+```swift
+extension Vector2D: Equatable {
+    static func == (left: Vector2D, right: Vector2D) -> Bool {
+        return (left.x == right.x) && (left.y == right.y)
+    }
+}
+```
+
+- 标准库 `Equatable` 协议对于“不等”运算符有默认的实现，它简单地将“相等”运算符的结果进行取反后返回
+
+- 使用
+
+```swift
+let twoThree = Vector2D(x: 2.0, y: 3.0)
+let anotherTwoThree = Vector2D(x: 2.0, y: 3.0)
+if twoThree == anotherTwoThree {
+    print("These two vectors are equivalent.")
+}
+// 打印“These two vectors are equivalent.”
+```
+
 ## 自定义运算符
+
+- 场景：除了重载运算符，还可以声明和实现*自定义运算符*
+  - 用来自定义运算符的字符列表请参考 [运算符]()
+- 语法：
+  - `operator` 关键字：在全局作用域内进行定义
+  - 指定 `prefix`、`infix` 或者 `postfix` 修饰符
+
+```swift
+prefix operator +++
+```
+
+- `+++` 被实现为“前缀双自增”运算符
+  - 使用了前面定义的复合加法运算符来让矩阵与自身进行相加
+  - 从而让 `Vector2D` 实例的 `x` 属性和 `y` 属性值翻倍
+- 实现：
+
+```swift
+extension Vector2D {
+    static prefix func +++ (vector: inout Vector2D) -> Vector2D {
+        vector += vector
+        return vector
+    }
+}
+
+var toBeDoubled = Vector2D(x: 1.0, y: 4.0)
+let afterDoubling = +++toBeDoubled
+// toBeDoubled 现在的值为 (2.0, 8.0)
+// afterDoubling 现在的值也为 (2.0, 8.0)
+```
+
 ### 自定义中缀运算符的优先级
+
+- 场景：相对于前缀、后缀这种单目运算符，中缀为双目运算符
+- 定义了一个新的自定义中缀运算符 `+-`，此运算符属于 `AdditionPrecedence` (“相加型”)优先组：
+
+```swift
+infix operator +-: AdditionPrecedence
+extension Vector2D {
+    static func +- (left: Vector2D, right: Vector2D) -> Vector2D {
+        return Vector2D(x: left.x + right.x, y: left.y - right.y)
+    }
+}
+let firstVector = Vector2D(x: 1.0, y: 2.0)
+let secondVector = Vector2D(x: 3.0, y: 4.0)
+let plusMinusVector = firstVector +- secondVector
+// plusMinusVector 是一个 Vector2D 实例，并且它的值为 (4.0, -2.0)
+```
+
+- 这个运算符把两个向量的 `x` 值相加，同时从第一个向量的 `y` 中减去第二个向量的 `y` 。
+- 因为它本质上是属于“相加型”运算符，所以将它放置在 `+` 和 `-` 等默认中缀“相加型”运算符相同的优先级组中。
+- 关于 Swift 标准库提供的运算符，以及完整的运算符优先级组和结合性设置，请参考 [运算符声明](https://developer.apple.com/documentation/swift/operator_declarations)。
+- 而更多关于优先级组以及自定义操作符和优先级组的语法，请参考 [运算符声明]()。
+
+> 当定义前缀与后缀运算符的时候，我们并没有指定优先级。
+>
+> 然而，如果对同一个值同时使用前缀与后缀运算符，则后缀运算符会先参与运算。
 
 # 语言参考
 
