@@ -3622,7 +3622,6 @@ for point in CompassPoint.allCases {
 - 原始值初始化器：接收一个 `rawValue` 的参数，类型即为原始值类型，返回值为枚举成员或 `nil`。
 
 
-
 - 用原始值 `7` 创建了枚举成员 `Uranus`
 
 ```swift
@@ -3653,7 +3652,7 @@ if let somePlanet = Planet(rawValue: positionToFind) { // 可选绑定（optiona
 
 ## 递归枚举 
 
-- 关联值类型为自身
+- 关联值类型为自身（自己存储自己）
 - 例子：定义枚举类型，可以存储三种算术表达式，纯数字、两个表达式相加、两个表达式相乘
 - 编译器操作递归枚举时，必须插入间接寻址层
   - 部分需要使用递归的枚举成员：前面加上 `indirect`关键字
