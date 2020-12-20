@@ -3903,7 +3903,6 @@ if tenEighty === alsoTenEighty {
 - 判断值类型：数值是否相等，用 **==**
 
 
-
 - 在章节 **等价操作符** 中将会详细介绍实现自定义 == 和 != 运算符的流程
 
 ### 指针
@@ -3943,7 +3942,7 @@ if tenEighty === alsoTenEighty {
 
 
 
-- 存储属性必须初始化：
+- 存储属性必须被初始化：
   - 初始化器赋初值
   - 直接赋默认值
 
@@ -4303,7 +4302,6 @@ narrowRectangle.width = 100
 print(narrowRectangle.height, narrowRectangle.width)
 // 打印 "5 4"
 ```
-
 
 
 - 使用赋值来指定初始值
